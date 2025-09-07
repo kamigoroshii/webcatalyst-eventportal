@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventEase - Smart Event Management Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-calendar-alt"></i>
+                <span>EventEase</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#events" class="nav-link">Events</a></li>
+                <li><a href="#register" class="nav-link">Register</a></li>
+                <li><a href="#ai-assistant" class="nav-link">AI Assistant</a></li>
+                <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+                <li><a href="#login" class="nav-link login-btn">Login</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active">
+        <div class="hero">
+            <div class="hero-content">
+                <h1>Welcome to EventEase</h1>
+                <p>Your smart event management portal for seamless college events</p>
+                <button class="cta-btn" onclick="showSection('events')">Explore Events</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h2>Upcoming Events</h2>
+            <div class="events-grid" id="home-events">
+                <!-- Events will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Events Section -->
+    <section id="events" class="section">
+        <div class="container">
+            <h2>All Events</h2>
+            <div class="events-grid" id="all-events">
+                <!-- Events will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Register Section -->
+    <section id="register" class="section">
+        <div class="container">
+            <h2>Event Registration</h2>
+            <div class="registration-form">
+                <form id="registrationForm">
+                    <div class="form-group">
+                        <label for="eventSelect">Select Event:</label>
+                        <select id="eventSelect" required>
+                            <option value="">Choose an event...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fullName">Full Name:</label>
+                        <input type="text" id="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="college">College:</label>
+                        <input type="text" id="college" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number:</label>
+                        <input type="tel" id="phone" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Register</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Assistant Section -->
+    <section id="ai-assistant" class="section">
+        <div class="container">
+            <h2>AI Event Assistant</h2>
+            <div class="ai-chat">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai-message">
+                        <i class="fas fa-robot"></i>
+                        <p>Hello! I'm your AI assistant. Ask me anything about events like "When is the coding contest?" or "What are the rules for the dance competition?"</p>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="userMessage" placeholder="Ask me about events...">
+                    <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="section">
+        <div class="container">
+            <h2>Organizer Dashboard</h2>
+            <div class="dashboard-tabs">
+                <button class="tab-btn active" onclick="showTab('manage-events')">Manage Events</button>
+                <button class="tab-btn" onclick="showTab('registrations')">Registrations</button>
+                <button class="tab-btn" onclick="showTab('ai-tools')">AI Tools</button>
+            </div>
+            
+            <!-- Manage Events Tab -->
+            <div id="manage-events" class="tab-content active">
+                <div class="dashboard-actions">
+                    <button class="action-btn" onclick="showAddEventForm()">
+                        <i class="fas fa-plus"></i> Add Event
+                    </button>
+                </div>
+                <div class="events-table">
+                    <table id="eventsTable">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Date</th>
+                                <th>Registrations</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTableBody">
+                            <!-- Events will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Registrations Tab -->
+            <div id="registrations" class="tab-content">
+                <div class="registrations-view">
+                    <select id="eventFilter">
+                        <option value="">All Events</option>
+                    </select>
+                    <button class="export-btn" onclick="exportRegistrations()">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                    <div class="registrations-table">
+                        <table id="registrationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>College</th>
+                                    <th>Event</th>
+                                    <th>Date Registered</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registrationsTableBody">
+                                <!-- Registrations will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Tools Tab -->
+            <div id="ai-tools" class="tab-content">
+                <div class="ai-generator">
+                    <h3>AI Event Description Generator</h3>
+                    <div class="form-group">
+                        <label for="eventType">Event Type:</label>
+                        <input type="text" id="eventType" placeholder="e.g., Hackathon, Dance Competition">
+                    </div>
+                    <button onclick="generateDescription()" class="generate-btn">Generate Description</button>
+                    <div class="generated-content" id="generatedDescription"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="userType" value="participant" checked> Participant
+                    </label>
+                    <label>
+                        <input type="radio" name="userType" value="organizer"> Organizer
+                    </label>
+                </div>
+                <button type="submit" class="submit-btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Event</h2>
+            <form id="addEventForm">
+                <div class="form-group">
+                    <label for="eventTitle">Event Title:</label>
+                    <input type="text" id="eventTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">Date:</label>
+                    <input type="date" id="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventTime">Time:</label>
+                    <input type="time" id="eventTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventVenue">Venue:</label>
+                    <input type="text" id="eventVenue" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDescription">Description:</label>
+                    <textarea id="eventDescription" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eventRules">Rules:</label>
+                    <textarea id="eventRules" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eventContact">Contact Info:</label>
+                    <input type="text" id="eventContact" required>
+                </div>
+                <button type="submit" class="submit-btn">Add Event</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div id="eventDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="eventDetailContent">
+                <!-- Event details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="success-content">
+                <i class="fas fa-check-circle"></i>
+                <h2>Registration Successful!</h2>
+                <div id="ticketInfo">
+                    <!-- Ticket info will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
