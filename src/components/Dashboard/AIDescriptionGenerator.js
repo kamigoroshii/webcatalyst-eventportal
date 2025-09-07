@@ -17,11 +17,11 @@ import {
 import {
   AutoAwesome,
   ContentCopy,
-  Refresh,
-  Save
+  Refresh
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
+import aiService from '../../services/aiService';
 
 const eventTypes = [
   'Conference',
@@ -62,23 +62,37 @@ const AIDescriptionGenerator = () => {
   const [generatedDescription, setGeneratedDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState(null);
   const { register, handleSubmit, formState: { errors }, watch } = useForm();
 
   const watchedValues = watch();
 
   const generateDescription = async (data) => {
     setLoading(true);
+    setError(null);
     
     try {
-      // Simulate AI generation delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock AI-generated description based on inputs
-      const description = createMockDescription(data);
-      setGeneratedDescription(description);
+      // Prepare event details for AI
+      const eventDetails = {
+        title: `${data.eventType}: ${data.topic}`,
+        category: data.category,
+        type: data.eventType,
+        audience: data.audience,
+        duration: data.duration,
+        features: data.highlights,
+        notes: `Tone: ${data.tone}`
+      };
+
+      const response = await aiService.generateEventDescription(eventDetails);
+      setGeneratedDescription(response.description);
       
     } catch (error) {
       console.error('Error generating description:', error);
+      setError(error.message);
+      
+      // Fallback to mock description if AI fails
+      const fallbackDescription = createMockDescription(data);
+      setGeneratedDescription(fallbackDescription);
     } finally {
       setLoading(false);
     }
@@ -376,6 +390,12 @@ const AIDescriptionGenerator = () => {
                 {copied && (
                   <Alert severity="success" sx={{ mt: 2 }}>
                     Description copied to clipboard!
+                  </Alert>
+                )}
+
+                {error && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    AI service unavailable. Using fallback generation: {error}
                   </Alert>
                 )}
               </CardContent>

@@ -19,10 +19,10 @@ import {
   ToggleButtonGroup,
   Chip
 } from '@mui/material';
-import { 
-  Visibility, 
-  VisibilityOff, 
-  Person, 
+import {
+  Visibility,
+  VisibilityOff,
+  Person,
   Business,
   School,
   Phone,
@@ -49,12 +49,19 @@ const AuthPage = () => {
     setActiveTab(newValue);
     setError('');
     reset();
+
+    // If switching to Sign In, skip role selection
+    if (newValue === 0) {
+      setStep('auth');
+      setUserRole('signin'); // Set a placeholder role for sign in
+    }
   };
 
   const handleRoleSelection = (role) => {
     setUserRole(role);
     setStep('auth');
     setError('');
+    setActiveTab(1); // Set to Sign Up tab when role is selected
   };
 
   const handleBackToRoleSelection = () => {
@@ -69,11 +76,15 @@ const AuthPage = () => {
     setLoading(true);
     setError('');
 
+    console.log('Form submitted:', { activeTab, data, userRole });
+
     try {
       let result;
       if (activeTab === 0) {
         // Sign In
+        console.log('Attempting sign in with:', data.email);
         result = await login(data.email, data.password);
+        console.log('Sign in result:', result);
       } else {
         // Sign Up
         const signupData = {
@@ -97,15 +108,24 @@ const AuthPage = () => {
 
         console.log('Sending signup data:', signupData);
         result = await register(signupData);
+        console.log('Sign up result:', result);
       }
 
       if (result.success) {
-        navigate('/');
+        console.log('Authentication successful, navigating...');
+        // Navigate based on user role
+        if (result.user.role === 'organizer') {
+          navigate('/dashboard');
+        } else {
+          navigate('/my-dashboard');
+        }
       } else {
+        console.log('Authentication failed:', result.error);
         setError(result.error || 'Authentication failed');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      console.error('Authentication error:', err);
+      setError('An unexpected error occurred: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -113,8 +133,8 @@ const AuthPage = () => {
 
   const cardVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: { duration: 0.6, ease: "easeOut" }
     }
@@ -142,92 +162,125 @@ const AuthPage = () => {
         </Typography>
       </Box>
 
-      <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
-        {/* Participant Option */}
-        <motion.div
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          style={{ flex: 1 }}
-        >
-          <Card
-            onClick={() => handleRoleSelection('participant')}
-            sx={{
-              cursor: 'pointer',
-              p: 3,
-              height: '100%',
-              border: '2px solid transparent',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                borderColor: 'primary.main',
-                boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)'
-              }
-            }}
+      <Box display="flex" flexDirection="column" gap={3}>
+        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
+          {/* Participant Option */}
+          <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ flex: 1 }}
           >
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" gap={2}>
-              <Box
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  backgroundColor: 'primary.light',
-                  color: 'primary.contrastText'
-                }}
-              >
-                <Person sx={{ fontSize: 48 }} />
+            <Card
+              onClick={() => handleRoleSelection('participant')}
+              sx={{
+                cursor: 'pointer',
+                p: 3,
+                height: '100%',
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => 
+                    theme.palette.mode === 'dark'
+                      ? '0 8px 25px rgba(138, 140, 107, 0.25)'
+                      : '0 8px 25px rgba(111, 113, 75, 0.15)'
+                }
+              }}
+            >
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" gap={2}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText'
+                  }}
+                >
+                  <Person sx={{ fontSize: 48 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" gutterBottom>
+                    Join as Participant
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Discover and register for amazing events in your area. Connect with like-minded people and expand your horizons.
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="h5" gutterBottom>
-                  Join as Participant
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Discover and register for amazing events in your area. Connect with like-minded people and expand your horizons.
-                </Typography>
-              </Box>
-            </Box>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
 
-        {/* Organizer Option */}
-        <motion.div
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          style={{ flex: 1 }}
-        >
-          <Card
-            onClick={() => handleRoleSelection('organizer')}
+          {/* Organizer Option */}
+          <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ flex: 1 }}
+          >
+            <Card
+              onClick={() => handleRoleSelection('organizer')}
+              sx={{
+                cursor: 'pointer',
+                p: 3,
+                height: '100%',
+                border: '2px solid transparent',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => 
+                    theme.palette.mode === 'dark'
+                      ? '0 8px 25px rgba(138, 140, 107, 0.25)'
+                      : '0 8px 25px rgba(111, 113, 75, 0.15)'
+                }
+              }}
+            >
+              <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" gap={2}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText'
+                  }}
+                >
+                  <Business sx={{ fontSize: 48 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" gutterBottom>
+                    Join as Organizer
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Create and manage events, reach your target audience. Build your community and grow your brand.
+                  </Typography>
+                </Box>
+              </Box>
+            </Card>
+          </motion.div>
+        </Box>
+
+        {/* Sign In Option */}
+        <Box textAlign="center">
+          <Typography variant="body1" color="text.secondary" mb={2}>
+            Already have an account?
+          </Typography>
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={() => {
+              setStep('auth');
+              setActiveTab(0);
+              setUserRole('signin');
+            }}
             sx={{
-              cursor: 'pointer',
-              p: 3,
-              height: '100%',
-              border: '2px solid transparent',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                borderColor: 'primary.main',
-                boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)'
-              }
+              px: 4,
+              py: 1.5,
+              borderRadius: 2,
+              fontSize: '1rem',
+              fontWeight: 600
             }}
           >
-            <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" gap={2}>
-              <Box
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  backgroundColor: 'secondary.light',
-                  color: 'secondary.contrastText'
-                }}
-              >
-                <Business sx={{ fontSize: 48 }} />
-              </Box>
-              <Box>
-                <Typography variant="h5" gutterBottom>
-                  Join as Organizer
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Create and manage events, reach your target audience. Build your community and grow your brand.
-                </Typography>
-              </Box>
-            </Box>
-          </Card>
-        </motion.div>
+            Sign In to Your Account
+          </Button>
+        </Box>
       </Box>
     </motion.div>
   );
@@ -250,7 +303,8 @@ const AuthPage = () => {
         </Button>
         <Box flex={1} textAlign="center">
           <Typography variant="h5" component="h1" gutterBottom>
-            {userRole === 'participant' ? 'Participant' : 'Organizer'} Account
+            {activeTab === 0 ? 'Sign In' :
+              userRole === 'participant' ? 'Participant Account' : 'Organizer Account'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {activeTab === 0 ? 'Sign in to your account' : 'Create your account'}
@@ -316,8 +370,8 @@ const AuthPage = () => {
                       fullWidth
                       label="Full Name"
                       variant="outlined"
-                      {...registerField('name', { 
-                        required: activeTab === 1 ? 'Name is required' : false 
+                      {...registerField('name', {
+                        required: activeTab === 1 ? 'Name is required' : false
                       })}
                       error={!!errors.name}
                       helperText={errors.name?.message}
@@ -338,8 +392,8 @@ const AuthPage = () => {
                         fullWidth
                         label="College/University"
                         variant="outlined"
-                        {...registerField('college', { 
-                          required: activeTab === 1 && userRole === 'participant' ? 'College is required' : false 
+                        {...registerField('college', {
+                          required: activeTab === 1 && userRole === 'participant' ? 'College is required' : false
                         })}
                         error={!!errors.college}
                         helperText={errors.college?.message}
@@ -355,7 +409,7 @@ const AuthPage = () => {
                         fullWidth
                         label="Phone Number"
                         variant="outlined"
-                        {...registerField('phone', { 
+                        {...registerField('phone', {
                           required: activeTab === 1 && userRole === 'participant' ? 'Phone number is required' : false,
                           pattern: {
                             value: /^\+?[\d\s\-\(\)]+$/,
@@ -379,8 +433,8 @@ const AuthPage = () => {
                         fullWidth
                         label="Organization/Company"
                         variant="outlined"
-                        {...registerField('organization', { 
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Organization is required' : false 
+                        {...registerField('organization', {
+                          required: activeTab === 1 && userRole === 'organizer' ? 'Organization is required' : false
                         })}
                         error={!!errors.organization}
                         helperText={errors.organization?.message}
@@ -396,8 +450,8 @@ const AuthPage = () => {
                         fullWidth
                         label="Position/Title"
                         variant="outlined"
-                        {...registerField('position', { 
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Position is required' : false 
+                        {...registerField('position', {
+                          required: activeTab === 1 && userRole === 'organizer' ? 'Position is required' : false
                         })}
                         error={!!errors.position}
                         helperText={errors.position?.message}
@@ -406,7 +460,7 @@ const AuthPage = () => {
                         fullWidth
                         label="Phone Number"
                         variant="outlined"
-                        {...registerField('phone', { 
+                        {...registerField('phone', {
                           required: activeTab === 1 && userRole === 'organizer' ? 'Phone number is required' : false,
                           pattern: {
                             value: /^\+?[\d\s\-\(\)]+$/,
@@ -442,8 +496,8 @@ const AuthPage = () => {
                         variant="outlined"
                         multiline
                         rows={2}
-                        {...registerField('address', { 
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Address is required' : false 
+                        {...registerField('address', {
+                          required: activeTab === 1 && userRole === 'organizer' ? 'Address is required' : false
                         })}
                         error={!!errors.address}
                         helperText={errors.address?.message}
@@ -469,7 +523,7 @@ const AuthPage = () => {
               label="Email Address"
               type="email"
               variant="outlined"
-              {...registerField('email', { 
+              {...registerField('email', {
                 required: 'Email is required',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -488,7 +542,7 @@ const AuthPage = () => {
               label="Password"
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
-              {...registerField('password', { 
+              {...registerField('password', {
                 required: 'Password is required',
                 minLength: {
                   value: 6,
@@ -569,7 +623,10 @@ const AuthPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FDFBE8 0%, #f5f3e0 100%)',
+        background: (theme) => 
+          theme.palette.mode === 'dark' 
+            ? 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)'
+            : 'linear-gradient(135deg, #FDFBE8 0%, #f5f3e0 100%)',
         padding: 2
       }}
     >
@@ -582,8 +639,11 @@ const AuthPage = () => {
           sx={{
             maxWidth: 800,
             width: '100%',
-            backgroundColor: '#FDFBE8',
-            boxShadow: '0 8px 32px rgba(111, 113, 75, 0.15)',
+            backgroundColor: 'background.paper',
+            boxShadow: (theme) => 
+              theme.palette.mode === 'dark'
+                ? '0 8px 32px rgba(0, 0, 0, 0.4)'
+                : '0 8px 32px rgba(111, 113, 75, 0.15)',
             borderRadius: 3,
             overflow: 'hidden'
           }}

@@ -16,23 +16,38 @@ EventEase is a comprehensive event management platform built with React, featuri
 - **Event Discovery**: Browse and search events with filtering by category
 - **Event Details**: Comprehensive event information with countdown timers
 - **Registration System**: Easy registration with QR code confirmation tickets
-- **AI Assistant**: Chat interface for event-related questions and assistance
+- **AI Assistant**: Powered by Google Gemini for intelligent event assistance
+- **Smart Recommendations**: AI-powered event suggestions based on preferences
 
 ### For Organizers
 - **Dashboard**: Complete event management interface
 - **Event Creation**: Intuitive form-based event creation and editing
 - **Registration Management**: View, filter, and export attendee data
-- **AI Description Generator**: Generate compelling event descriptions using AI
+- **AI Description Generator**: Generate compelling event descriptions using Google Gemini
+- **Event Planning Advice**: Get AI-powered tips and strategies for successful events
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React 18 with React Router
-- **UI Framework**: Material-UI (MUI) with custom theming
-- **Animations**: Framer Motion for smooth transitions
-- **Forms**: React Hook Form with validation
-- **Data Export**: React CSV for registration exports
-- **QR Codes**: QRCode.react for registration tickets
-- **Icons**: Material-UI Icons
+### Frontend
+- **React 18** with React Router for navigation
+- **Material-UI (MUI)** with custom theming and dark mode
+- **Framer Motion** for smooth animations and transitions
+- **React Hook Form** with validation
+- **React CSV** for data export functionality
+- **QRCode.react** for registration tickets
+
+### Backend
+- **Node.js** with Express.js framework
+- **MongoDB** with Mongoose ODM
+- **JWT** for authentication and authorization
+- **Google Gemini AI** for intelligent assistance
+- **Multer** for file uploads
+- **Nodemailer** for email notifications
+
+### AI Integration
+- **Google Gemini Pro** for natural language processing
+- **Smart Context Awareness** for personalized responses
+- **Event-Specific Training** for domain expertise
 
 ## 🚀 Getting Started
 

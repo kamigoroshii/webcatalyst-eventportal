@@ -10,7 +10,13 @@ import {
   IconButton,
   Chip,
   CircularProgress,
-  Fade
+  Fade,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid
 } from '@mui/material';
 import {
   Send,
@@ -18,31 +24,61 @@ import {
   Person,
   AutoAwesome,
   Event,
-  Help
+  Help,
+  Lightbulb,
+  TipsAndUpdates,
+  Psychology
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import aiService from '../services/aiService';
 
 const AIAssistantPage = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: 'ai',
-      content: 'Hello! I\'m your EventEase AI Assistant. I can help you with event information, generate event descriptions, or answer any questions about our platform. How can I assist you today?',
+      content: 'Hello! I\'m your EventEase AI Assistant powered by Google Gemini. I can help you with event information, generate compelling event descriptions, provide recommendations, and assist with event planning. How can I help you today?',
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [aiStatus, setAiStatus] = useState({ status: 'checking', message: 'Checking AI service...' });
+  const [error, setError] = useState(null);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const messagesEndRef = useRef(null);
   const { user, isOrganizer } = useAuth();
 
-  const suggestedQuestions = [
-    'What events are happening this week?',
-    'How do I register for an event?',
-    'Generate a description for a tech meetup',
-    'What are the upcoming AI conferences?',
-    'Help me create an event description'
+  const suggestedQuestions = aiService.getSuggestedQuestions(user?.role || 'user');
+
+  const quickActions = [
+    {
+      title: 'Generate Event Description',
+      description: 'Create compelling descriptions for your events',
+      icon: <AutoAwesome />,
+      action: () => setInputMessage('Help me generate an event description'),
+      available: isOrganizer
+    },
+    {
+      title: 'Find Events',
+      description: 'Discover events that match your interests',
+      icon: <Event />,
+      action: () => setInputMessage('Show me upcoming events that might interest me')
+    },
+    {
+      title: 'Event Planning Tips',
+      description: 'Get advice on organizing successful events',
+      icon: <Lightbulb />,
+      action: () => setInputMessage('Give me tips for planning a successful event'),
+      available: isOrganizer
+    },
+    {
+      title: 'Registration Help',
+      description: 'Learn how to register for events',
+      icon: <Help />,
+      action: () => setInputMessage('How do I register for an event?')
+    }
   ];
 
   const scrollToBottom = () => {
@@ -53,8 +89,24 @@ const AIAssistantPage = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    checkAIStatus();
+  }, []);
+
+  const checkAIStatus = async () => {
+    try {
+      const status = await aiService.getStatus();
+      setAiStatus(status);
+    } catch (error) {
+      setAiStatus({ 
+        status: 'error', 
+        message: 'Failed to connect to AI service' 
+      });
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || isTyping) return;
 
     const userMessage = {
       id: Date.now(),
@@ -63,54 +115,49 @@ const AIAssistantPage = () => {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInputMessage('');
     setIsTyping(true);
+    setError(null);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(inputMessage);
+    try {
+      // Get conversation history for context
+      const conversationHistory = aiService.formatConversationHistory(
+        currentMessages.slice(-10) // Last 10 messages for context
+      );
+
+      const response = await aiService.sendMessage(inputMessage, conversationHistory);
+      
       const aiMessage = {
         id: Date.now() + 1,
         type: 'ai',
-        content: aiResponse,
+        content: response.response,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('AI response error:', error);
+      setError(error.message);
+      
+      const errorMessage = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: 'I apologize, but I\'m having trouble processing your request right now. Please try again in a moment, or contact support if the issue persists.',
+        timestamp: new Date(),
+        isError: true
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
-  const generateAIResponse = (input) => {
-    const lowerInput = input.toLowerCase();
-    
-    if (lowerInput.includes('event') && lowerInput.includes('this week')) {
-      return 'Here are the upcoming events this week:\n\n1. **Tech Innovation Summit** - March 15, 2024\n2. **Digital Marketing Masterclass** - March 20, 2024\n3. **Startup Pitch Competition** - March 25, 2024\n\nWould you like more details about any of these events?';
-    }
-    
-    if (lowerInput.includes('register')) {
-      return 'To register for an event:\n\n1. Browse events on the homepage\n2. Click on an event card to view details\n3. Click the "Register Now" button\n4. Fill out the registration form\n5. You\'ll receive a confirmation with a QR code\n\nMake sure you\'re signed in to register for events!';
-    }
-    
-    if (lowerInput.includes('generate') && lowerInput.includes('description')) {
-      return 'I\'d be happy to help generate an event description! Please provide me with:\n\n• Event type (conference, workshop, meetup, etc.)\n• Topic or theme\n• Target audience\n• Duration\n• Key highlights or speakers\n\nWith this information, I can create a compelling event description for you.';
-    }
-    
-    if (lowerInput.includes('ai conference')) {
-      return 'Here are some upcoming AI-related events:\n\n1. **AI & Machine Learning Workshop** - April 1, 2024\n   Location: Tech Campus Auditorium\n   Focus: Hands-on ML techniques\n\n2. **Future of AI Summit** - Coming Soon\n   Stay tuned for more AI conferences!\n\nWould you like to be notified when new AI events are added?';
-    }
-    
-    if (lowerInput.includes('create') && lowerInput.includes('event')) {
-      if (isOrganizer) {
-        return 'As an organizer, you can create events through your dashboard:\n\n1. Go to Dashboard → Add Event\n2. Fill in event details\n3. Use the AI Description Generator for compelling descriptions\n4. Set registration limits and requirements\n5. Publish your event\n\nWould you like me to help you brainstorm ideas for your event?';
-      } else {
-        return 'Event creation is available for organizers. If you\'d like to become an event organizer, please contact our support team. I can help you find existing events that match your interests instead!';
-      }
-    }
-    
-    // Default response
-    return 'I understand you\'re asking about "' + input + '". I can help you with:\n\n• Finding and browsing events\n• Registration assistance\n• Event information and details\n• Generating event descriptions (for organizers)\n• Platform navigation\n\nCould you please be more specific about what you\'d like to know?';
+  const handleQuickAction = (action) => {
+    action();
+    setShowQuickActions(false);
   };
 
   const handleSuggestedQuestion = (question) => {
@@ -142,19 +189,81 @@ const AIAssistantPage = () => {
             transition={{ duration: 0.6 }}
           >
             <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-              <SmartToy sx={{ fontSize: 40, mr: 2 }} />
+              <Psychology sx={{ fontSize: 40, mr: 2 }} />
               <Typography variant="h3" component="h1">
                 AI Assistant
               </Typography>
+              <Chip 
+                label="Powered by Gemini" 
+                size="small" 
+                sx={{ ml: 2, bgcolor: 'rgba(255,255,255,0.2)' }}
+              />
             </Box>
             <Typography variant="h6" sx={{ opacity: 0.9 }}>
-              Get instant help with events, registrations, and more
+              Get intelligent help with events, descriptions, and planning
             </Typography>
+            
+            {/* AI Status Indicator */}
+            <Box mt={2}>
+              <Chip
+                label={aiStatus?.status === 'active' ? 'AI Ready' : aiStatus?.status === 'checking' ? 'Connecting...' : 'AI Unavailable'}
+                color={aiStatus?.status === 'active' ? 'success' : aiStatus?.status === 'checking' ? 'warning' : 'error'}
+                size="small"
+                sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}
+              />
+            </Box>
           </motion.div>
         </Container>
       </Box>
 
       <Container maxWidth="md" sx={{ py: 4 }}>
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Quick Actions */}
+        {messages.length === 1 && (
+          <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Quick Actions
+            </Typography>
+            <Grid container spacing={2}>
+              {quickActions
+                .filter(action => action.available !== false)
+                .map((action, index) => (
+                <Grid item xs={12} sm={6} key={index}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        elevation: 3,
+                        transform: 'translateY(-2px)'
+                      }
+                    }}
+                    onClick={() => handleQuickAction(action.action)}
+                  >
+                    <Box display="flex" alignItems="center" mb={1}>
+                      {action.icon}
+                      <Typography variant="subtitle2" sx={{ ml: 1, fontWeight: 600 }}>
+                        {action.title}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {action.description}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+        )}
+
         {/* Chat Container */}
         <Paper
           elevation={3}
@@ -224,9 +333,10 @@ const AIAssistantPage = () => {
                               fontWeight: 600
                             }
                           }}
-                        >
-                          {message.content}
-                        </Typography>
+                          dangerouslySetInnerHTML={{
+                            __html: aiService.formatResponse(message.content)
+                          }}
+                        />
                         <Typography
                           variant="caption"
                           sx={{
@@ -277,13 +387,13 @@ const AIAssistantPage = () => {
           </Box>
 
           {/* Suggested Questions */}
-          {messages.length === 1 && (
+          {messages.length <= 3 && (
             <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Try asking:
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={1}>
-                {suggestedQuestions.map((question, index) => (
+                {suggestedQuestions.slice(0, 4).map((question, index) => (
                   <Chip
                     key={index}
                     label={question}
@@ -325,7 +435,7 @@ const AIAssistantPage = () => {
               <IconButton
                 color="primary"
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isTyping}
+                disabled={!inputMessage.trim() || isTyping || aiStatus?.status !== 'active'}
                 sx={{
                   bgcolor: 'primary.main',
                   color: 'white',
@@ -337,7 +447,7 @@ const AIAssistantPage = () => {
                   }
                 }}
               >
-                <Send />
+                {isTyping ? <CircularProgress size={20} color="inherit" /> : <Send />}
               </IconButton>
             </Box>
           </Box>
@@ -346,16 +456,25 @@ const AIAssistantPage = () => {
         {/* Features Info */}
         <Box mt={4}>
           <Typography variant="h6" gutterBottom textAlign="center">
-            What I can help you with:
+            AI-Powered Features:
           </Typography>
           <Box display="flex" justifyContent="center" flexWrap="wrap" gap={2}>
-            <Chip icon={<Event />} label="Event Information" variant="outlined" />
-            <Chip icon={<Help />} label="Registration Help" variant="outlined" />
-            <Chip icon={<AutoAwesome />} label="Event Descriptions" variant="outlined" />
+            <Chip icon={<Event />} label="Event Discovery" variant="outlined" />
+            <Chip icon={<Help />} label="Smart Assistance" variant="outlined" />
+            <Chip icon={<AutoAwesome />} label="Content Generation" variant="outlined" />
+            <Chip icon={<TipsAndUpdates />} label="Planning Advice" variant="outlined" />
             {isOrganizer && (
-              <Chip icon={<SmartToy />} label="Organizer Tools" variant="outlined" />
+              <Chip icon={<Psychology />} label="Organizer AI Tools" variant="outlined" />
             )}
           </Box>
+          
+          {aiStatus?.status !== 'active' && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                {aiStatus?.message || 'AI service status unknown'} - Some AI features may be limited.
+              </Typography>
+            </Alert>
+          )}
         </Box>
       </Container>
     </Box>

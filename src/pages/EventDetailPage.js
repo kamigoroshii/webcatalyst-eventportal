@@ -284,7 +284,7 @@ const EventDetailPage = () => {
                   fullWidth
                   variant="contained"
                   size="large"
-                  onClick={() => user ? setRegistrationOpen(true) : navigate('/auth')}
+                  onClick={() => user ? setRegistrationOpen(true) : navigate('/')}
                   disabled={event.attendees >= event.maxAttendees}
                   sx={{ mb: 2 }}
                 >

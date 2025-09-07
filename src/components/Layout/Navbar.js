@@ -45,7 +45,7 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { label: 'Home', path: '/', key: 'home' },
+    { label: 'Home', path: '/home', key: 'home' },
     { label: 'AI Assistant', path: '/ai-assistant', key: 'ai-assistant' },
     ...(isOrganizer 
       ? [{ label: 'Organizer Dashboard', path: '/dashboard', key: 'organizer-dashboard' }] 
@@ -75,7 +75,7 @@ const Navbar = () => {
             display="flex" 
             alignItems="center" 
             sx={{ cursor: 'pointer' }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate(user ? '/home' : '/')}
           >
             <EventIcon sx={{ color: 'primary.main', mr: 1, fontSize: 28 }} />
             <Typography 
@@ -162,7 +162,7 @@ const Navbar = () => {
             >
               <Button
                 variant="contained"
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/')}
                 sx={{ borderRadius: 2 }}
               >
                 Sign In
