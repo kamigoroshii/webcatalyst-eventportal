@@ -113,72 +113,119 @@ const HomePage = () => {
           !backendEvents.some(be => 
             be.title === mock.title &&
             new Date(be.date).toDateString() === new Date(mock.date).toDateString()
-                  {/* Wave Animation Background */}
-                  <Box sx={{
-                    position: 'absolute',
-                    left: 0,
-                    bottom: 0,
-                    width: '100%',
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                    lineHeight: 0,
-                  }}>
-                    <svg viewBox="0 0 1440 320" width="100%" height="120" preserveAspectRatio="none" style={{ display: 'block' }}>
-                      <path
-                        fill="#43a047"
-                        fillOpacity="1"
-                        d="M0,160L60,170C120,180,240,200,360,192C480,184,600,144,720,128C840,112,960,112,1080,128C1200,144,1320,176,1380,192L1440,208L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-                      />
-                    </svg>
-                  </Box>
+          )
+        );
+        
+        setEvents([...filteredMockEvents, ...backendEvents]);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setEvents([...mockEvents]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = (event.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (event.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+  const startIndex = (currentPage - 1) * eventsPerPage;
+  const currentEvents = filteredEvents.slice(startIndex, startIndex + eventsPerPage);
+
+  const handleEventClick = (eventId) => {
+    navigate(`/events/${eventId}`);
+  };
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 80, damping: 18 } }
+};  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      {/* Hero Section */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #6F714B 0%, #8a8c6b 100%)',
+          color: 'white',
+          py: { xs: 7, md: 10 },
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Container maxWidth="lg">
+          {/* Animated background shapes */}
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}>
             <motion.div
               animate={{
-                x: [0, -60, 60, 0],
-                y: [0, -30, 30, 0],
-                rotate: [0, 12, -12, 0]
+                x: [0, 60, -60, 0],
+                y: [0, 30, -30, 0],
+                scale: [1, 1.15, 0.95, 1]
+              }}
+              transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut' }}
+              style={{
+                position: 'absolute',
+                top: '18%',
+                left: '8%',
+                width: 140,
+                height: 140,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))',
+                filter: 'blur(12px)',
+                boxShadow: '0 0 40px 10px rgba(255,255,255,0.08)'
+              }}
+            />
+            <motion.div
+              animate={{
+                x: [0, -50, 50, 0],
+                y: [0, -25, 25, 0],
+                rotate: [0, 10, -10, 0]
+              }}
+              transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut' }}
+              style={{
+                position: 'absolute',
+                bottom: '12%',
+                right: '10%',
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                background: 'linear-gradient(120deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))',
+                filter: 'blur(8px)',
+                boxShadow: '0 0 30px 8px rgba(255,255,255,0.07)'
+              }}
+            />
+            <motion.div
+              animate={{
+                x: [0, 30, -30, 0],
+                y: [0, -20, 20, 0],
+                scale: [1, 1.1, 0.9, 1]
               }}
               transition={{ repeat: Infinity, duration: 14, ease: 'easeInOut' }}
               style={{
                 position: 'absolute',
-                bottom: '10%',
-                right: '8%',
-                width: 120,
-                height: 120,
+                top: '65%',
+                left: '38%',
+                width: 80,
+                height: 80,
                 borderRadius: '50%',
-                background: `linear-gradient(120deg, ${'#6F714B'}88, ${'#b1afa2'}88, ${'#FDFBE8'}22)`,
-                filter: 'blur(14px)',
-                boxShadow: `0 0 40px 12px ${'#6F714B'}44`
+                background: 'linear-gradient(120deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02))',
+                filter: 'blur(6px)',
+                boxShadow: '0 0 20px 4px rgba(255,255,255,0.06)'
               }}
             />
-            {/* Small accent blob */}
-            <motion.div
-              animate={{
-                x: [0, 40, -40, 0],
-                y: [0, -18, 18, 0],
-                scale: [1, 1.08, 0.92, 1]
-              }}
-              transition={{ repeat: Infinity, duration: 16, ease: 'easeInOut' }}
-              style={{
-                position: 'absolute',
-                top: '68%',
-                left: '40%',
-                width: 90,
-                height: 90,
-                borderRadius: '50%',
-                background: `linear-gradient(120deg, ${'#b1afa2'}88, ${'#FDFBE8'}22)`,
-                filter: 'blur(10px)',
-                boxShadow: `0 0 24px 6px ${'#b1afa2'}44`
-              }}
-            />
-            {/* Optional: subtle overlay for dark mode */}
-            <Box sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(120deg, #23272a88 0%, #2c2f3388 100%)' : 'none',
-              zIndex: 1,
-            }} />
           </Box>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -222,79 +269,80 @@ const HomePage = () => {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
-        return (
-          <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-            {/* Hero Section */}
-            <Box
-              sx={{
-                background: (theme) => theme.palette.mode === 'dark'
-                  ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.background.default} 100%)`
-                  : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                color: (theme) => theme.palette.text.primary,
-                py: { xs: 7, md: 10 },
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <Container maxWidth="lg">
-                <Box sx={{
-                  position: 'absolute',
-                  left: 0,
-                  bottom: 0,
-                  width: '100%',
-                  zIndex: 0,
-                  pointerEvents: 'none',
-                  lineHeight: 0,
-                }}>
-                  <svg viewBox="0 0 1440 320" width="100%" height="120" preserveAspectRatio="none" style={{ display: 'block' }}>
-                    <path
-                      fill="#43a047"
-                      fillOpacity="1"
-                      d="M0,160L60,170C120,180,240,200,360,192C480,184,600,144,720,128C840,112,960,112,1080,128C1200,144,1320,176,1380,192L1440,208L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-                    />
-                  </svg>
-                </Box>
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8 }}
-                  style={{ position: 'relative', zIndex: 1 }}
-                >
-                  <Typography 
-                    variant="h2" 
-                    component="h1" 
-                    gutterBottom
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: { xs: '1.5rem', md: '2.2rem' },
-                      letterSpacing: 0.5,
-                    }}
+        {/* Featured Events Section */}
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h4" component="h2" sx={{ 
+            mb: 3, 
+            fontWeight: 700,
+            position: 'relative',
+            '&:after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: 0,
+              width: 60,
+              height: 4,
+              backgroundColor: 'primary.main',
+              borderRadius: 2
+            }
+          }}>
+            Featured Events
+          </Typography>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <Grid container spacing={3}>
+              {!loading && filteredEvents.slice(0, 3).map((event, index) => (
+                <Grid item xs={12} md={4} key={`featured-${event._id || event.id || index}`}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    Discover Amazing Events
-                  </Typography>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      mb: 4, 
-                      opacity: 0.9,
-                      maxWidth: '800px',
-                      mx: 'auto',
-                    }}
-                  >
-                    Connect, learn, and grow with events tailored for you
-                  </Typography>
-                  <Button 
-                    variant="contained" 
-                    color="secondary"
-                    size="large"
-                    onClick={() => navigate('/events')}
-                  >
-                    Explore Events
-                  </Button>
-                </motion.div>
-              </Container>
-            </Box>
+                    <Card
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        borderRadius: 2,
+                        boxShadow: '0 8px 24px rgba(111, 113, 75, 0.15)',
+                        transition: 'all 0.3s ease',
+                        position: 'relative',
+                        '&:hover': {
+                          transform: 'translateY(-8px)',
+                          boxShadow: '0 16px 32px rgba(111, 113, 75, 0.2)'
+                        },
+                        '&:hover .MuiCardMedia-root': {
+                          transform: 'scale(1.05)'
+                        }
+                      }}
+                      onClick={() => handleEventClick(event._id || event.id)}
+                    >
+                      <Box sx={{ position: 'relative' }}>
+                        <CardMedia
+                          component="img"
+                          height="200"
+                          image={event.image || `https://source.unsplash.com/random/400x200/?${event.category?.toLowerCase() || 'event'}`}
+                          alt={event.title}
+                          sx={{ 
+                            transition: 'transform 0.6s ease',
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Typography variant="h5" component="h3" gutterBottom sx={{ fontWeight: 600 }}>
+                          {event.title}
+                        </Typography>
+                        <Box display="flex" alignItems="center" mb={1.5}>
+                          <CalendarToday sx={{ fontSize: 18, mr: 1, color: 'primary.main' }} />
+                          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                            {new Date(event.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
                               month: 'long',
                               day: 'numeric'
                             })}
@@ -368,82 +416,80 @@ const HomePage = () => {
             transition={{ duration: 0.6 }}
           >
             <Box display="flex" gap={1} flexWrap="wrap" justifyContent={{ xs: 'center', md: 'flex-start' }}>
-              return (
-                <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                  {/* Hero Section */}
-                  <Box
-                    sx={{
-                      background: (theme) => theme.palette.mode === 'dark'
-                        ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.background.default} 100%)`
-                        : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                      color: (theme) => theme.palette.text.primary,
-                      py: { xs: 7, md: 10 },
-                      textAlign: 'center',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Container maxWidth="lg" sx={{ position: 'relative' }}>
-                      {/* Wave Animation Background */}
-                      <Box sx={{
-                        position: 'absolute',
-                        left: 0,
-                        bottom: 0,
-                        width: '100%',
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                        lineHeight: 0,
-                      }}>
-                        <svg viewBox="0 0 1440 320" width="100%" height="120" preserveAspectRatio="none" style={{ display: 'block' }}>
-                          <path
-                            fill="#43a047"
-                            fillOpacity="1"
-                            d="M0,160L60,170C120,180,240,200,360,192C480,184,600,144,720,128C840,112,960,112,1080,128C1200,144,1320,176,1380,192L1440,208L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-                          />
-                        </svg>
-                      </Box>
-                      <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
-                        style={{ position: 'relative', zIndex: 1 }}
-                      >
-                        <Typography 
-                          variant="h2" 
-                          component="h1" 
-                          gutterBottom
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: '1.5rem', md: '2.2rem' },
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          Discover Amazing Events
-                        </Typography>
-                        <Typography 
-                          variant="h6" 
-                          sx={{ 
-                            mb: 4, 
-                            opacity: 0.9,
-                            maxWidth: '800px',
-                            mx: 'auto',
-                          }}
-                        >
-                          Connect, learn, and grow with events tailored for you
-                        </Typography>
-                        <Button 
-                          variant="contained" 
-                          color="secondary"
-                          size="large"
-                          onClick={() => navigate('/events')}
-                        >
-                          Explore Events
-                        </Button>
-                      </motion.div>
-                    </Container>
-                  </Box>
-                  {/* Main Content */}
-                  <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
+              {categories.map((category) => (
+                <Chip
+                  key={category}
+                  label={category}
+                  onClick={() => setSelectedCategory(category)}
+                  color={selectedCategory === category ? 'primary' : 'default'}
+                  variant={selectedCategory === category ? 'filled' : 'outlined'}
+                  sx={{ 
+                    cursor: 'pointer',
+                    borderRadius: '16px',
+                    fontWeight: selectedCategory === category ? 600 : 400,
+                    px: 1,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                />
+              ))}
+            </Box>
+          </motion.div>
+        </Box>
+
+        {/* Events Grid */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h4" component="h2" sx={{ 
+            mb: 3, 
+            fontWeight: 700,
+            position: 'relative',
+            '&:after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: 0,
+              width: 60,
+              height: 4,
+              backgroundColor: 'primary.main',
+              borderRadius: 2
+            }
+          }}>
+            Upcoming Events
+          </Typography>
+        </Box>
+        
+        <Grid container spacing={3}>
+          {loading ? (
+            // Enhanced loading skeletons
+            Array.from({ length: 6 }).map((_, index) => (
+              <Grid item xs={12} sm={6} md={4} key={`skeleton-${index}`}>
+                <Card sx={{ 
+                  height: '100%', 
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}>
+                  <Skeleton variant="rectangular" height={200} animation="wave" />
+                  <CardContent>
+                    <Skeleton variant="text" height={32} animation="wave" />
+                    <Box sx={{ display: 'flex', alignItems: 'center', my: 1 }}>
+                      <Skeleton variant="circular" width={20} height={20} animation="wave" sx={{ mr: 1 }} />
+                      <Skeleton variant="text" height={20} width="60%" animation="wave" />
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', my: 1 }}>
+                      <Skeleton variant="circular" width={20} height={20} animation="wave" sx={{ mr: 1 }} />
+                      <Skeleton variant="text" height={20} width="70%" animation="wave" />
+                    </Box>
+                    <Skeleton variant="text" height={20} animation="wave" />
+                    <Skeleton variant="text" height={20} width="90%" animation="wave" />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Skeleton variant="text" width="30%" height={36} animation="wave" />
+                      <Skeleton variant="rectangular" width="30%" height={36} animation="wave" sx={{ borderRadius: 1 }} />
+                    </Box>
+                  </CardContent>
                 </Card>
               </Grid>
             ))
