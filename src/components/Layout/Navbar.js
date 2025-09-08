@@ -66,8 +66,8 @@ const Navbar = () => {
       }}
     >
       <Toolbar>
-        {/* Logo - hidden on organizer dashboard */}
-        {!location.pathname.startsWith('/dashboard') && (
+        {/* Logo - hidden on organizer dashboard and user dashboard */}
+        {!(location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/my-dashboard')) && (
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

@@ -199,7 +199,8 @@ router.post('/', [auth, authorize('organizer', 'admin')], [
       organizerInfo: {
         name: req.user.name,
         email: req.user.email
-      }
+      },
+      status: 'published'
     };
 
     // Validate dates

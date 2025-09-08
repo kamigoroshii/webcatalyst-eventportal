@@ -99,11 +99,11 @@ const HomePage = () => {
           return event;
         });
         
-        // Filter out mock events that have the same title/date as backend events
+        // Filter out mock events if a backend event exists with the same title and date
         const filteredMockEvents = processedMockEvents.filter(mock =>
           !backendEvents.some(be => 
-            be.title === mock.title || 
-            (be.category === mock.category && be.title.includes('Web Catalyst'))
+            be.title === mock.title &&
+            new Date(be.date).toDateString() === new Date(mock.date).toDateString()
           )
         );
         
@@ -139,7 +139,7 @@ const HomePage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       {/* Hero Section */}
       <Box
         sx={{
@@ -165,7 +165,7 @@ const HomePage = () => {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4, flex: 1 }}>
         {/* Search and Filters */}
         <Box sx={{ mb: 4 }}>
           <Grid container spacing={3} alignItems="center">
@@ -345,6 +345,24 @@ const HomePage = () => {
         )}
       </Container>
       <ChatBotWidget />
+      {/* Footer Section */}
+      <Box component="footer" sx={{ backgroundColor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', py: 2, mt: 4 }}>
+        <Container maxWidth="lg">
+          <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" gap={2}>
+            <Typography variant="body2" color="text.secondary">
+              &copy; {new Date().getFullYear()} EventEase
+            </Typography>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Typography variant="body2" color="text.secondary">
+                <a href="mailto:support@eventease.com" style={{ color: '#6F714B', textDecoration: 'none' }}>support@eventease.com</a>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <a href="tel:+1234567890" style={{ color: '#6F714B', textDecoration: 'none' }}>+1 234 567 890</a>
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
     </Box>
   );
 };

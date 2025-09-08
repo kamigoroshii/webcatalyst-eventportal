@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -57,32 +57,23 @@ const DashboardHome = () => {
     }
   ];
 
-  const recentEvents = [
-    {
-      id: 1,
-      title: 'Tech Innovation Summit 2024',
-      date: '2024-03-15',
-      registrations: 250,
-      maxRegistrations: 300,
-      status: 'active'
-    },
-    {
-      id: 2,
-      title: 'Digital Marketing Masterclass',
-      date: '2024-03-20',
-      registrations: 120,
-      maxRegistrations: 150,
-      status: 'active'
-    },
-    {
-      id: 3,
-      title: 'Startup Pitch Competition',
-      date: '2024-03-25',
-      registrations: 180,
-      maxRegistrations: 200,
-      status: 'upcoming'
-    }
-  ];
+  const [recentEvents, setRecentEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoadingEvents(true);
+      try {
+        const res = await require('../../services/api').eventsAPI.getMyEvents({ limit: 5 });
+        // Use only the latest 5 events
+        setRecentEvents(Array.isArray(res.data?.events) ? res.data.events.slice(0, 5) : []);
+      } catch (err) {
+        setRecentEvents([]);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -160,49 +151,59 @@ const DashboardHome = () => {
                 Recent Events
               </Typography>
               <List>
-                {recentEvents.map((event, index) => (
-                  <ListItem
-                    key={event.id}
-                    divider={index < recentEvents.length - 1}
-                    sx={{ px: 0, alignItems: 'flex-start' }}
-                  >
-                    <ListItemText
-                      primary={event.title}
-                      secondary={
-                        <>
-                          {new Date(event.date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                          <br />
-                          {event.registrations}/{event.maxRegistrations} registered
-                        </>
-                      }
-                      primaryTypographyProps={{
-                        variant: 'subtitle1',
-                        fontWeight: 500
-                      }}
-                      secondaryTypographyProps={{
-                        variant: 'body2',
-                        color: 'text.secondary'
-                      }}
-                    />
-                    <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-                      <Chip
-                        label={event.status}
-                        size="small"
-                        color={event.status === 'active' ? 'success' : 'primary'}
-                        variant="outlined"
-                      />
-                      <LinearProgress
-                        variant="determinate"
-                        value={(event.registrations / event.maxRegistrations) * 100}
-                        sx={{ width: 100, height: 6, borderRadius: 3 }}
-                      />
-                    </Box>
+                {loadingEvents ? (
+                  <ListItem>
+                    <ListItemText primary={<Typography>Loading events...</Typography>} />
                   </ListItem>
-                ))}
+                ) : recentEvents.length === 0 ? (
+                  <ListItem>
+                    <ListItemText primary={<Typography>No recent events found</Typography>} />
+                  </ListItem>
+                ) : (
+                  recentEvents.map((event, index) => (
+                    <ListItem
+                      key={event._id || event.id}
+                      divider={index < recentEvents.length - 1}
+                      sx={{ px: 0, alignItems: 'flex-start' }}
+                    >
+                      <ListItemText
+                        primary={event.title}
+                        secondary={
+                          <>
+                            {event.date ? new Date(event.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : 'No date'}
+                            <br />
+                            {(event.currentRegistrations || event.registrations || 0)}/{event.maxRegistrations || 0} registered
+                          </>
+                        }
+                        primaryTypographyProps={{
+                          variant: 'subtitle1',
+                          fontWeight: 500
+                        }}
+                        secondaryTypographyProps={{
+                          variant: 'body2',
+                          color: 'text.secondary'
+                        }}
+                      />
+                      <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+                        <Chip
+                          label={event.status || 'draft'}
+                          size="small"
+                          color={event.status === 'active' ? 'success' : 'primary'}
+                          variant="outlined"
+                        />
+                        <LinearProgress
+                          variant="determinate"
+                          value={((event.currentRegistrations || event.registrations || 0) / (event.maxRegistrations || 1)) * 100}
+                          sx={{ width: 100, height: 6, borderRadius: 3 }}
+                        />
+                      </Box>
+                    </ListItem>
+                  ))
+                )}
               </List>
               <Box mt={2}>
                 <Button
