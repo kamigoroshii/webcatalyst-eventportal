@@ -29,31 +29,31 @@ const DashboardHome = () => {
   const stats = [
     {
       title: 'Total Events',
-      value: '12',
+      value: '4',
       icon: <Event />,
       color: '#6F714B',
       change: '+2 this month'
     },
     {
       title: 'Total Registrations',
-      value: '1,247',
+      value: '645',
       icon: <People />,
       color: '#8a8c6b',
-      change: '+15% from last month'
+      change: '+2% from last month'
     },
     {
       title: 'Active Events',
-      value: '5',
+      value: '2',
       icon: <TrendingUp />,
       color: '#a3a587',
-      change: '3 ending soon'
+      change: '1 ending soon'
     },
     {
       title: 'This Month',
-      value: '8',
+      value: '3',
       icon: <CalendarToday />,
       color: '#6F714B',
-      change: '4 upcoming'
+      change: '3 upcoming'
     }
   ];
 
@@ -189,12 +189,6 @@ const DashboardHome = () => {
                         }}
                       />
                       <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-                        <Chip
-                          label={event.status || 'draft'}
-                          size="small"
-                          color={event.status === 'active' ? 'success' : 'primary'}
-                          variant="outlined"
-                        />
                         <LinearProgress
                           variant="determinate"
                           value={((event.currentRegistrations || event.registrations || 0) / (event.maxRegistrations || 1)) * 100}

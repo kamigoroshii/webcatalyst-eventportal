@@ -16,7 +16,14 @@ import {
   DialogActions,
   Alert,
   TextField,
-  InputAdornment
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Avatar,
+  Divider,
+  LinearProgress
 } from '@mui/material';
 import {
   Add,
@@ -188,120 +195,221 @@ const EventsList = () => {
         />
       </Box>
 
-      {/* Events Grid */}
-      <Grid container spacing={3}>
-        {filteredEvents.map((event, index) => (
-          <Grid item xs={12} key={event._id}>
-            <motion.div
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <Card
-                sx={{
-                  width: '100%',
-                  minHeight: 160,
-                  background: (theme) => theme.palette.primary.main,
-                  color: (theme) => theme.palette.primary.contrastText,
-                  borderRadius: 3,
-                  boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 32px rgba(111, 113, 75, 0.25)'
-                  }
-                }}
-                onClick={() => navigate(`/events/${event._id}`)}
+      {/* Events List */}
+      <Card sx={{ borderRadius: 2, boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+        {filteredEvents.length > 0 ? (
+          <List sx={{ p: 0 }}>
+            {filteredEvents.map((event, index) => (
+              <motion.div
+                key={event._id}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <CardContent>
-                  {/* Header with menu */}
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Box flexGrow={1}>
-                      <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 700, color: (theme) => theme.palette.primary.contrastText }}>
-                        {event.title || <span style={{ color: '#e0e0e0' }}>Untitled Event</span>}
-                      </Typography>
-                      <Chip
-                        label={event.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : 'Draft'}
-                        size="small"
-                        color="secondary"
-                        variant="filled"
-                        sx={{ fontWeight: 500, textTransform: 'capitalize', color: (theme) => theme.palette.primary.main, background: (theme) => theme.palette.secondary.main }}
-                      />
-                    </Box>
-                    <IconButton
-                      onClick={(e) => handleMenuOpen(e, event)}
-                      size="small"
-                      sx={{ color: (theme) => theme.palette.primary.contrastText }}
-                    >
-                      <MoreVert />
-                    </IconButton>
-                  </Box>
-
-                  {/* Event Details */}
-                  <Box mb={2}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <CalendarToday sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
-                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
-                        {event.date ? new Date(event.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : <span style={{ color: '#e0e0e0' }}>No date</span>}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <LocationOn sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
-                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
-                        {event.location?.venue || event.location || <span style={{ color: '#e0e0e0' }}>No venue</span>}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <People sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
-                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
-                        {typeof event.currentRegistrations === 'number' ? event.currentRegistrations : 0}/{event.maxRegistrations || 0} registered
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Typography variant="body2" sx={{ mb: 2, fontStyle: !event.description ? 'italic' : 'normal', color: (theme) => theme.palette.primary.contrastText }}>
-                    {event.description || 'No description provided.'}
-                  </Typography>
-
-                  {/* Category */}
-                  <Chip
-                    label={event.category || 'Uncategorized'}
-                    size="small"
-                    color="secondary"
-                    variant="filled"
-                    sx={{ fontWeight: 500, textTransform: 'capitalize', color: (theme) => theme.palette.primary.main, background: (theme) => theme.palette.secondary.main }}
+                <ListItem
+                  sx={{
+                    py: 3,
+                    px: 3,
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'rgba(111, 113, 75, 0.04)',
+                      transform: 'translateX(4px)'
+                    },
+                    borderLeft: `4px solid ${
+                      event.status === 'active' ? 'success.main' : 
+                      event.status === 'upcoming' ? 'primary.main' :
+                      event.status === 'completed' ? 'grey.400' : 'warning.main'
+                    }`
+                  }}
+                  onClick={() => navigate(`/events/${event._id}`)}
+                >
+                  <Avatar
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      mr: 3,
+                      bgcolor: 'primary.main',
+                      backgroundImage: event.image ? `url(${event.image})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    {!event.image && (event.title ? event.title.charAt(0).toUpperCase() : 'E')}
+                  </Avatar>
+                  
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                        <Typography 
+                          variant="h6" 
+                          component="h3" 
+                          sx={{ 
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            mr: 2
+                          }}
+                        >
+                          {event.title || 'Untitled Event'}
+                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Chip
+                            label={event.category || 'General'}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontSize: '0.75rem' }}
+                          />
+                          <Chip
+                            label={event.status?.charAt(0).toUpperCase() + event.status?.slice(1) || 'Draft'}
+                            size="small"
+                            color={getStatusColor(event.status)}
+                            sx={{ fontSize: '0.75rem' }}
+                          />
+                        </Box>
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Box display="flex" alignItems="center" gap={3} mb={1.5}>
+                          <Box display="flex" alignItems="center">
+                            <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {event.date ? new Date(event.date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              }) : 'No date set'}
+                            </Typography>
+                          </Box>
+                          
+                          <Box display="flex" alignItems="center">
+                            <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {event.location?.venue || event.location || 'No venue set'}
+                            </Typography>
+                          </Box>
+                          
+                          <Box display="flex" alignItems="center">
+                            <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {typeof event.currentRegistrations === 'number' ? event.currentRegistrations : 0}/{event.maxRegistrations || 'Unlimited'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ 
+                            mb: 1.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            fontStyle: !event.description ? 'italic' : 'normal'
+                          }}
+                        >
+                          {event.description || 'No description provided.'}
+                        </Typography>
+                        
+                        {event.maxRegistrations > 0 && (
+                          <Box sx={{ maxWidth: 300 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Registration Progress
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" fontWeight="bold">
+                                {Math.round(((typeof event.currentRegistrations === 'number' ? event.currentRegistrations : 0) / event.maxRegistrations) * 100)}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={Math.min(((typeof event.currentRegistrations === 'number' ? event.currentRegistrations : 0) / event.maxRegistrations) * 100, 100)}
+                              sx={{
+                                height: 6,
+                                borderRadius: 3,
+                                bgcolor: 'rgba(0,0,0,0.05)',
+                                '& .MuiLinearProgress-bar': {
+                                  backgroundColor: 'success.main',
+                                  borderRadius: 3
+                                }
+                              }}
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    }
                   />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* No Results */}
-      {filteredEvents.length === 0 && (
-        <Box textAlign="center" py={8}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No events found
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            {searchTerm ? 'Try adjusting your search criteria' : 'Create your first event to get started'}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => navigate('/dashboard/add-event')}
-          >
-            Create Event
-          </Button>
-        </Box>
-      )}
+                  
+                  <ListItemSecondaryAction>
+                    <Box display="flex" gap={1}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEvent(event);
+                          handleEdit();
+                        }}
+                        startIcon={<Edit />}
+                        sx={{ borderRadius: 1.5 }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/events/${event._id}`);
+                        }}
+                        startIcon={<Visibility />}
+                        sx={{ borderRadius: 1.5 }}
+                      >
+                        View
+                      </Button>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, event);
+                        }}
+                        size="small"
+                        sx={{ ml: 1 }}
+                      >
+                        <MoreVert />
+                      </IconButton>
+                    </Box>
+                  </ListItemSecondaryAction>
+                </ListItem>
+                
+                {index < filteredEvents.length - 1 && <Divider />}
+              </motion.div>
+            ))}
+          </List>
+        ) : (
+          // No Results
+          <Box textAlign="center" py={8}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No events found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              {searchTerm ? 'Try adjusting your search criteria' : 'Create your first event to get started'}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => navigate('/dashboard/add-event')}
+            >
+              Create Event
+            </Button>
+          </Box>
+        )}
+      </Card>
+        
+    
 
       {/* Context Menu */}
       <Menu

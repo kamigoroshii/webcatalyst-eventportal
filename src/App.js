@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import Navbar from './components/Layout/Navbar';
 import HomePage from './pages/HomePage';
+import EventsPage from './pages/EventsPage';
 import AuthPage from './pages/AuthPage';
 import EventDetailPage from './pages/EventDetailPage';
 import AIAssistantPage from './pages/AIAssistantPage';
@@ -39,6 +40,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/events" element={<EventsPage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
         <Route path="/ai-assistant" element={<AIAssistantPage />} />

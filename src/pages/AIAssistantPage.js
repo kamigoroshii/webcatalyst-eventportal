@@ -38,7 +38,7 @@ const AIAssistantPage = () => {
     {
       id: 1,
       type: 'ai',
-      content: 'Hello! I\'m your EventEase AI Assistant powered by Google Gemini. I can help you with event information, generate compelling event descriptions, provide recommendations, and assist with event planning. How can I help you today?',
+      content: 'Hello! I\'m your EventEase AI Assistant. I can help you with event information, generate compelling event descriptions, provide recommendations, and assist with event planning. How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -248,12 +248,12 @@ const AIAssistantPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+  <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', color: 'text.primary' }}>
       {/* Header */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #6F714B 0%, #8a8c6b 100%)',
-          color: 'white',
+          background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #23272a 0%, #2c2f33 100%)' : 'linear-gradient(135deg, #6F714B 0%, #8a8c6b 100%)',
+          color: 'text.primary',
           py: 4,
           textAlign: 'center'
         }}
@@ -292,7 +292,7 @@ const AIAssistantPage = () => {
         <Paper
           elevation={3}
           sx={{
-            height: 'calc(100vh - 120px)', // fill most of the viewport, adjust header height as needed
+            height: 'calc(100vh - 120px)',
             minHeight: '600px',
             display: 'flex',
             flexDirection: 'column',
@@ -302,7 +302,9 @@ const AIAssistantPage = () => {
             width: '100vw',
             position: 'relative',
             m: 0,
-            p: 0
+            p: 0,
+            backgroundColor: 'background.paper',
+            color: 'text.primary'
           }}
         >
           {/* Messages Area */}
@@ -311,7 +313,8 @@ const AIAssistantPage = () => {
               flexGrow: 1,
               p: 2,
               overflowY: 'auto',
-              backgroundColor: 'background.default'
+              backgroundColor: 'background.default',
+              color: 'text.primary'
             }}
           >
             <AnimatePresence>
@@ -348,11 +351,16 @@ const AIAssistantPage = () => {
                         elevation={1}
                         sx={{
                           p: 2,
-                          backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
-                          color: message.type === 'user' ? 'white' : 'text.primary',
+                          backgroundColor: message.type === 'user'
+                            ? (theme) => theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.main'
+                            : 'background.paper',
+                          color: message.type === 'user'
+                            ? (theme) => theme.palette.mode === 'dark' ? 'text.primary' : 'white'
+                            : 'text.primary',
                           borderRadius: 2,
                           borderTopLeftRadius: message.type === 'user' ? 2 : 0.5,
-                          borderTopRightRadius: message.type === 'user' ? 0.5 : 2
+                          borderTopRightRadius: message.type === 'user' ? 0.5 : 2,
+                          boxShadow: 0
                         }}
                       >
                         <Typography
@@ -443,7 +451,8 @@ const AIAssistantPage = () => {
               p: 2,
               borderTop: '1px solid',
               borderColor: 'divider',
-              backgroundColor: 'background.paper'
+              backgroundColor: 'background.paper',
+              color: 'text.primary'
             }}
           >
             <Box display="flex" alignItems="flex-end" gap={1}>
@@ -488,7 +497,7 @@ const AIAssistantPage = () => {
           <Typography variant="h6" gutterBottom textAlign="center">
 
           </Typography>
-          <Box display="flex" justifyContent="center" flexWrap="wrap" gap={2}>
+          <Box display="flex" justifyContent="center" flexWrap="wrap" gap={2} sx={{ color: 'text.primary' }}>
             <Chip icon={<Event />} label="Event Discovery" variant="outlined" />
             <Chip icon={<Help />} label="Smart Assistance" variant="outlined" />
             <Chip icon={<AutoAwesome />} label="Content Generation" variant="outlined" />

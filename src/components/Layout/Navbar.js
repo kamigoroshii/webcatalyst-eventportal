@@ -46,6 +46,7 @@ const Navbar = () => {
 
   const navItems = [
     { label: 'Home', path: '/home', key: 'home' },
+    { label: 'Events', path: '/events', key: 'events' },
     { label: 'AI Assistant', path: '/ai-assistant', key: 'ai-assistant' },
     ...(isOrganizer 
       ? [{ label: 'Organizer Dashboard', path: '/dashboard', key: 'organizer-dashboard' }] 
