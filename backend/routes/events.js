@@ -13,7 +13,10 @@ router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
   query('category').optional().isIn(['Technology', 'Business', 'Marketing', 'Design', 'Finance', 'Education', 'Health', 'Entertainment', 'Sports', 'Other']),
-  query('status').optional().isIn(['published', 'upcoming', 'ongoing', 'completed']),
+  query('status').optional().custom(value => {
+    if (value === '' || value === undefined || value === null) return true;
+    return ['published', 'upcoming', 'ongoing', 'completed', 'draft'].includes(value);
+  }),
   query('search').optional().isLength({ max: 100 }).withMessage('Search term too long')
 ], optionalAuth, async (req, res) => {
   try {
@@ -44,17 +47,21 @@ router.get('/', [
       query.category = category;
     }
 
-    if (status) {
-      if (status === 'upcoming') {
-        query.date = { $gte: new Date() };
-        query.status = 'published';
-      } else {
-        query.status = status;
-      }
+    // Status handling
+    if (status === '' || status === undefined || status === null) {
+      // If empty string or no status is passed, don't filter by status at all
+      console.log('No status filter - showing all events including draft');
+    } else if (status === 'upcoming') {
+      query.date = { $gte: new Date() };
+      query.status = 'published';
+    } else if (status) {
+      query.status = status;
     } else {
       // Default to published events only
       query.status = 'published';
     }
+    
+    console.log('Events query:', JSON.stringify(query));
 
     if (search) {
       query.$text = { $search: search };
@@ -182,27 +189,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
 // @desc    Create new event
 // @access  Private (Organizers only)
 router.post('/', [auth, authorize('organizer', 'admin')], [
-  body('title').trim().isLength({ min: 5, max: 100 }).withMessage('Title must be between 5 and 100 characters'),
-  body('description').trim().isLength({ min: 20, max: 2000 }).withMessage('Description must be between 20 and 2000 characters'),
-  body('category').isIn(['Technology', 'Business', 'Marketing', 'Design', 'Finance', 'Education', 'Health', 'Entertainment', 'Sports', 'Other']),
-  body('date').isISO8601().withMessage('Please provide a valid date'),
-  body('startTime').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Please provide valid start time (HH:MM)'),
-  body('endTime').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Please provide valid end time (HH:MM)'),
-  body('location.venue').trim().isLength({ min: 2, max: 100 }).withMessage('Venue must be between 2 and 100 characters'),
-  body('location.address').trim().isLength({ min: 5, max: 200 }).withMessage('Address must be between 5 and 200 characters'),
-  body('maxRegistrations').isInt({ min: 1 }).withMessage('Maximum registrations must be at least 1'),
-  body('registrationDeadline').isISO8601().withMessage('Please provide a valid registration deadline')
 ], async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
+  // No validation: accept all event data
 
     const eventData = {
       ...req.body,
@@ -462,6 +451,27 @@ router.get('/meta/categories', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching categories'
+    });
+  }
+});
+
+// @route   GET /api/events/debug/all
+// @desc    Debug endpoint to get all events regardless of status
+// @access  Public
+router.get('/debug/all', async (req, res) => {
+  try {
+    const events = await Event.find().lean();
+    
+    res.json({
+      success: true,
+      count: events.length,
+      events: events
+    });
+  } catch (error) {
+    console.error('Debug all events error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching all events'
     });
   }
 });

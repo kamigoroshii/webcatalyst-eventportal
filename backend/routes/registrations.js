@@ -76,10 +76,26 @@ router.post('/', auth, [
       });
     }
 
+
+
+    // Generate registrationId
+    const { v4: uuidv4 } = require('uuid');
+    const registrationId = uuidv4();
+
+    // Simulate QR code generation delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Generate QR code (simple placeholder, replace with real QR code logic)
+    const qrCodeData = `REGISTRATION:${registrationId}`;
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeData)}&size=200x200`;
+
     // Create registration
     const registration = new Registration({
       user: req.user.userId,
       event: eventId,
+      registrationId,
+      qrCode,
+      qrCodeData,
       userInfo: {
         name: userInfo?.name || user.name,
         email: userInfo?.email || user.email,
@@ -96,6 +112,31 @@ router.post('/', auth, [
     });
 
     await registration.save();
+
+    // Send QR code to user's email (simple placeholder, replace with real mail logic)
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: process.env.MAIL_USER,
+      to: registration.userInfo.email,
+      subject: 'Your Event Registration QR Code',
+      html: `<p>Thank you for registering! Here is your QR code:</p><img src='${qrCode}' alt='QR Code' />`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending registration email:', error);
+      } else {
+        console.log('Registration email sent:', info.response);
+      }
+    });
 
     // Update event registration count
     await Event.findByIdAndUpdate(eventId, {
@@ -158,7 +199,11 @@ router.get('/my-registrations', auth, [
 
     const [registrations, totalRegistrations] = await Promise.all([
       Registration.find(query)
-        .populate('event', 'title date location status organizer')
+        .populate({
+          path: 'event',
+          select: 'title date location status organizer',
+          populate: { path: 'organizer', select: 'name email' }
+        })
         .sort({ registrationDate: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -359,7 +404,7 @@ router.get('/event/:eventId', [auth, authorize('organizer', 'admin')], [
           as: 'userDetails'
         }
       },
-      { $unwind: '$userDetails' }
+  { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } }
     ];
 
     // Add search filter if provided

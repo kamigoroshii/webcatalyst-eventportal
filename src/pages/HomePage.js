@@ -1,4 +1,7 @@
+
+// ...entire contents of HomePageFixed.js...
 import React, { useState, useEffect } from 'react';
+import ChatBotWidget from '../components/Common/ChatBotWidget';
 import {
   Box,
   Container,
@@ -16,7 +19,10 @@ import {
 } from '@mui/material';
 import { Search, LocationOn, CalendarToday, Person } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { eventsAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+
+const categories = ['All', 'Technology', 'Marketing', 'Business', 'Design', 'Finance', 'Entertainment'];
 
 // Mock data - replace with API calls
 const mockEvents = [
@@ -42,53 +48,19 @@ const mockEvents = [
     attendees: 120,
     maxAttendees: 150
   },
+  // Add the web catalyst event as a mock event to ensure it shows up
   {
-    id: 3,
-    title: 'Startup Pitch Competition',
-    date: '2024-03-25',
-    location: 'Innovation Hub',
-    description: 'Watch promising startups pitch their ideas to investors.',
-    image: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400',
-    category: 'Business',
-    attendees: 180,
-    maxAttendees: 200
-  },
-  {
-    id: 4,
-    title: 'AI & Machine Learning Workshop',
-    date: '2024-04-01',
-    location: 'Tech Campus Auditorium',
-    description: 'Hands-on workshop covering latest AI and ML techniques.',
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400',
-    category: 'Technology',
-    attendees: 95,
-    maxAttendees: 100
-  },
-  {
-    id: 5,
-    title: 'Creative Design Conference',
-    date: '2024-04-05',
-    location: 'Art District Gallery',
-    description: 'Explore the latest trends in creative design and UX.',
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400',
-    category: 'Design',
-    attendees: 160,
-    maxAttendees: 180
-  },
-  {
-    id: 6,
-    title: 'Blockchain & Crypto Summit',
-    date: '2024-04-10',
-    location: 'Financial District Center',
-    description: 'Deep dive into blockchain technology and cryptocurrency trends.',
-    image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400',
-    category: 'Finance',
-    attendees: 220,
-    maxAttendees: 250
+    id: 100,
+    title: 'Web Catalyst',
+    date: '2025-09-10',
+    location: 'Virtual Event',
+    description: 'Web Catalyst is a dynamic tech-driven event designed to bring together developers, designers, and digital innovators.',
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400',
+    category: 'Entertainment',
+    attendees: 0,
+    maxAttendees: 20
   }
 ];
-
-const categories = ['All', 'Technology', 'Marketing', 'Business', 'Design', 'Finance'];
 
 const HomePage = () => {
   const [events, setEvents] = useState([]);
@@ -100,16 +72,55 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate API loading
-    setTimeout(() => {
-      setEvents(mockEvents);
-      setLoading(false);
-    }, 1000);
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        // Try to fetch both published and draft events
+        const publishedResponse = await eventsAPI.getEvents();
+        const draftResponse = await eventsAPI.getEvents({ status: 'draft' });
+        
+        const publishedEvents = Array.isArray(publishedResponse.data?.events) ? 
+          publishedResponse.data.events : [];
+          
+        const draftEvents = Array.isArray(draftResponse.data?.events) ? 
+          draftResponse.data.events : [];
+          
+        // Combine both types of events
+        const backendEvents = [...publishedEvents, ...draftEvents];
+        
+        console.log('Published events:', publishedEvents);
+        console.log('Draft events:', draftEvents);
+        
+        // Make sure each mock event has a unique ID
+        const processedMockEvents = mockEvents.map(event => {
+          if (!event._id) {
+            event._id = `mock-${event.id}`;
+          }
+          return event;
+        });
+        
+        // Filter out mock events that have the same title/date as backend events
+        const filteredMockEvents = processedMockEvents.filter(mock =>
+          !backendEvents.some(be => 
+            be.title === mock.title || 
+            (be.category === mock.category && be.title.includes('Web Catalyst'))
+          )
+        );
+        
+        setEvents([...filteredMockEvents, ...backendEvents]);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setEvents([...mockEvents]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
   }, []);
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (event.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (event.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -128,7 +139,7 @@ const HomePage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', position: 'relative' }}>
       {/* Hero Section */}
       <Box
         sx={{
@@ -201,7 +212,7 @@ const HomePage = () => {
           {loading ? (
             // Loading skeletons
             Array.from({ length: 6 }).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid item xs={12} sm={6} md={4} key={`skeleton-${index}`}>
                 <Card>
                   <Skeleton variant="rectangular" height={200} />
                   <CardContent>
@@ -214,7 +225,7 @@ const HomePage = () => {
             ))
           ) : (
             currentEvents.map((event, index) => (
-              <Grid item xs={12} sm={6} md={4} key={event.id}>
+              <Grid item xs={12} sm={6} md={4} key={`event-${event._id || event.id || index}`}>
                 <motion.div
                   variants={cardVariants}
                   initial="hidden"
@@ -231,13 +242,17 @@ const HomePage = () => {
                         boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)'
                       }
                     }}
-                    onClick={() => handleEventClick(event.id)}
+                    onClick={() => handleEventClick(event._id || event.id)}
                   >
                     <CardMedia
                       component="img"
                       height="200"
-                      image={event.image}
+                      image={event.image || `https://source.unsplash.com/random/400x200/?${event.category?.toLowerCase() || 'event'}`}
                       alt={event.title}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400';
+                      }}
                     />
                     <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
@@ -266,19 +281,23 @@ const HomePage = () => {
                       <Box display="flex" alignItems="center" mb={1}>
                         <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                         <Typography variant="body2" color="text.secondary">
-                          {event.location}
+                          {typeof event.location === 'object' && event.location !== null
+                            ? `${event.location.venue || ''}${event.location.venue && event.location.address ? ', ' : ''}${event.location.address || ''}`
+                            : event.location}
                         </Typography>
                       </Box>
 
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
-                        {event.description}
+                        {event.description && event.description.length > 100 
+                          ? `${event.description.substring(0, 100)}...` 
+                          : event.description}
                       </Typography>
 
                       <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box display="flex" alignItems="center">
                           <Person sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                           <Typography variant="body2" color="text.secondary">
-                            {event.attendees}/{event.maxAttendees}
+                            {event.currentRegistrations || event.attendees || 0}/{event.maxRegistrations || event.maxAttendees || 0}
                           </Typography>
                         </Box>
                         <Button
@@ -286,7 +305,7 @@ const HomePage = () => {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEventClick(event.id);
+                            handleEventClick(event._id || event.id);
                           }}
                         >
                           View Details
@@ -325,6 +344,7 @@ const HomePage = () => {
           </Box>
         )}
       </Container>
+      <ChatBotWidget />
     </Box>
   );
 };

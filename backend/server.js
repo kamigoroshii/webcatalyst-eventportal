@@ -14,6 +14,12 @@ const aiRoutes = require('./routes/ai');
 
 const app = express();
 
+// CORS configuration (must be first)
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
 // Security middleware
 app.use(helmet());
 
@@ -23,13 +29,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/api/', limiter);
-
-// CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+// app.use('/api/', limiter); // Disabled for development
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -50,8 +50,13 @@ app.use('/api/registrations', registrationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Notifications route
+const notificationsRoutes = require('./routes/notifications');
+app.use('/api/notifications', notificationsRoutes);
+
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+const corsOptions = { origin: 'http://localhost:3000', credentials: true };
+app.get('/api/health', cors(corsOptions), (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),

@@ -32,44 +32,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import QRCode from 'qrcode.react';
+import { eventsAPI } from '../services/api';
+import { registrationsAPI } from '../services/api';
 
 // Mock event data - replace with API call
-const mockEventDetails = {
-  1: {
-    id: 1,
-    title: 'Tech Innovation Summit 2024',
-    date: '2024-03-15',
-    time: '09:00 AM - 06:00 PM',
-    location: 'Silicon Valley Convention Center',
-    address: '123 Tech Street, Silicon Valley, CA 94000',
-    description: 'Join industry leaders for cutting-edge tech discussions and networking. This summit brings together innovators, entrepreneurs, and tech enthusiasts to explore the latest trends in technology, artificial intelligence, and digital transformation.',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-    category: 'Technology',
-    attendees: 250,
-    maxAttendees: 300,
-    organizer: {
-      name: 'Tech Events Inc.',
-      email: 'contact@techevents.com',
-      phone: '+1 (555) 123-4567'
-    },
-    schedule: [
-      { time: '09:00 AM', activity: 'Registration & Welcome Coffee' },
-      { time: '10:00 AM', activity: 'Keynote: Future of AI' },
-      { time: '11:30 AM', activity: 'Panel: Startup Ecosystem' },
-      { time: '01:00 PM', activity: 'Lunch & Networking' },
-      { time: '02:30 PM', activity: 'Workshop: Cloud Technologies' },
-      { time: '04:00 PM', activity: 'Investor Pitch Session' },
-      { time: '05:30 PM', activity: 'Closing Remarks' }
-    ],
-    rules: [
-      'Please arrive 30 minutes before the event starts',
-      'Bring a valid ID for registration',
-      'Photography is allowed during sessions',
-      'Networking is encouraged during breaks',
-      'Food and beverages will be provided'
-    ]
-  }
-};
 
 const EventDetailPage = () => {
   const { id } = useParams();
@@ -80,25 +46,40 @@ const EventDetailPage = () => {
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registrationData, setRegistrationData] = useState(null);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [mailSent, setMailSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const eventData = mockEventDetails[id];
-      if (eventData) {
-        setEvent(eventData);
+    // Fetch event from backend
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        const res = await eventsAPI.getEvent(id);
+        setEvent(res.data);
+      } catch (err) {
+        setEvent(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 500);
+    };
+    fetchEvent();
   }, [id]);
 
   useEffect(() => {
     if (event) {
       const updateCountdown = () => {
-        const eventDate = new Date(event.date + ' ' + event.time.split(' - ')[0]);
+        let eventTime = '';
+        if (event.time) {
+          if (typeof event.time === 'string' && event.time.includes(' - ')) {
+            eventTime = event.time.split(' - ')[0];
+          } else {
+            eventTime = event.time;
+          }
+        }
+        const eventDate = new Date(event.date + (eventTime ? ' ' + eventTime : ''));
         const now = new Date();
         const difference = eventDate - now;
 
@@ -106,7 +87,6 @@ const EventDetailPage = () => {
           const days = Math.floor(difference / (1000 * 60 * 60 * 24));
           const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-          
           setTimeLeft(`${days}d ${hours}h ${minutes}m`);
         } else {
           setTimeLeft('Event has started');
@@ -120,18 +100,32 @@ const EventDetailPage = () => {
   }, [event]);
 
   const handleRegistration = (data) => {
-    // Simulate registration process
-    const registrationInfo = {
-      ...data,
-      eventId: event.id,
-      eventTitle: event.title,
-      registrationId: `REG-${Date.now()}`,
-      qrCode: `${event.id}-${Date.now()}`
+    setRegistrationLoading(true);
+    setMailSent(false);
+    // Actual registration API call
+    const submitRegistration = async () => {
+      try {
+        const payload = {
+          eventId: event._id,
+          userInfo: {
+            name: data.name,
+            email: data.email,
+            college: data.college,
+            phone: data.phone
+          }
+        };
+        const res = await registrationsAPI.register(payload);
+        setRegistrationData(res.data);
+        setRegistrationSuccess(true);
+        setMailSent(true); // Show notification
+      } catch (err) {
+        // Optionally show error
+      } finally {
+        setRegistrationOpen(false);
+        setRegistrationLoading(false);
+      }
     };
-    
-    setRegistrationData(registrationInfo);
-    setRegistrationSuccess(true);
-    setRegistrationOpen(false);
+    submitRegistration();
   };
 
   if (loading) {
@@ -139,6 +133,23 @@ const EventDetailPage = () => {
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
         <CircularProgress />
       </Box>
+    );
+  }
+
+  // Registration loading dialog
+  if (registrationLoading) {
+    return (
+      <Dialog open={registrationLoading} maxWidth="xs" fullWidth>
+        <DialogTitle>Processing Registration</DialogTitle>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" alignItems="center" py={3}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary" mt={2}>
+              Generating your QR code and sending confirmation email...
+            </Typography>
+          </Box>
+        </DialogContent>
+      </Dialog>
     );
   }
 
@@ -300,10 +311,14 @@ const EventDetailPage = () => {
                     <Typography variant="h6">Location</Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    {event.location}
+                    {typeof event.location === 'object' && event.location !== null
+                      ? event.location.venue
+                      : event.location}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {event.address}
+                    {typeof event.location === 'object' && event.location !== null
+                      ? event.location.address
+                      : event.address}
                   </Typography>
                 </Box>
 
@@ -406,7 +421,11 @@ const EventDetailPage = () => {
           <Alert severity="success" sx={{ mb: 3 }}>
             You have successfully registered for {event.title}
           </Alert>
-          
+          {mailSent && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Confirmation email with your QR code has been sent!
+            </Alert>
+          )}
           {registrationData && (
             <Box textAlign="center">
               <Typography variant="h6" gutterBottom>
@@ -415,11 +434,9 @@ const EventDetailPage = () => {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Registration ID: {registrationData.registrationId}
               </Typography>
-              
               <Box display="flex" justifyContent="center" my={3}>
                 <QRCode value={registrationData.qrCode} size={150} />
               </Box>
-              
               <Typography variant="body2" color="text.secondary">
                 Please save this QR code and bring it to the event
               </Typography>

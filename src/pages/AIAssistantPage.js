@@ -47,6 +47,8 @@ const AIAssistantPage = () => {
   const [aiStatus, setAiStatus] = useState({ status: 'checking', message: 'Checking AI service...' });
   const [error, setError] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [pendingEventDetails, setPendingEventDetails] = useState(null);
+  const [pendingEventQuestions, setPendingEventQuestions] = useState([]);
   const messagesEndRef = useRef(null);
   const { user, isOrganizer } = useAuth();
 
@@ -122,25 +124,100 @@ const AIAssistantPage = () => {
     setError(null);
 
     try {
-      // Get conversation history for context
-      const conversationHistory = aiService.formatConversationHistory(
-        currentMessages.slice(-10) // Last 10 messages for context
-      );
+      // If we are collecting event details, handle that flow
+      if (pendingEventQuestions.length > 0) {
+        // Add user's answer to pendingEventDetails
+        const nextDetailKey = pendingEventQuestions[0].key;
+        const updatedDetails = { ...pendingEventDetails, [nextDetailKey]: inputMessage };
+        const remainingQuestions = pendingEventQuestions.slice(1);
+        setPendingEventDetails(updatedDetails);
+        setPendingEventQuestions(remainingQuestions);
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          type: 'user',
+          content: inputMessage,
+          timestamp: new Date()
+        }]);
+        setInputMessage('');
+        // If more questions remain, ask next
+        if (remainingQuestions.length > 0) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            type: 'ai',
+            content: remainingQuestions[0].question,
+            timestamp: new Date()
+          }]);
+        } else {
+          // All details collected, create event
+          setIsTyping(true);
+          const eventResult = await aiService.createEvent(updatedDetails);
+          setIsTyping(false);
+          setMessages(prev => [...prev, {
+            id: Date.now() + 2,
+            type: 'ai',
+            content: eventResult.success && eventResult.event
+              ? `✅ Your event "${eventResult.event.title || eventResult.event.name}" has been created!`
+              : '❌ Sorry, I could not create the event.',
+            timestamp: new Date()
+          }]);
+          setPendingEventDetails(null);
+          setPendingEventQuestions([]);
+        }
+        return;
+      }
 
+      // Normal AI flow
+      const conversationHistory = aiService.formatConversationHistory(
+        currentMessages.slice(-10)
+      );
       const response = await aiService.sendMessage(inputMessage, conversationHistory);
-      
+      console.log('AI API response:', response);
+      let aiContent = response && response.success && typeof response.response === 'string'
+        ? response.response
+        : 'Sorry, I did not receive a valid response.';
+
+      // If AI detects create_event intent, start collecting details if missing
+      if (response.intent === 'create_event') {
+        const requiredFields = [
+          { key: 'title', question: 'What is the title of your event?' },
+          { key: 'date', question: 'When will your event take place? (Please provide date and time)' },
+          { key: 'location', question: 'Where will your event be held?' },
+          { key: 'category', question: 'What is the category of your event?' },
+          { key: 'description', question: 'Please provide a brief description of your event.' }
+        ];
+        const missingFields = requiredFields.filter(f => !response.eventDetails || !response.eventDetails[f.key]);
+        if (missingFields.length > 0) {
+          setPendingEventDetails(response.eventDetails || {});
+          setPendingEventQuestions(missingFields);
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            type: 'ai',
+            content: missingFields[0].question,
+            timestamp: new Date()
+          }]);
+          setInputMessage('');
+          return;
+        } else if (response.eventDetails) {
+          // All details present, create event
+          setIsTyping(true);
+          const eventResult = await aiService.createEvent(response.eventDetails);
+          setIsTyping(false);
+          aiContent += eventResult.success && eventResult.event
+            ? `\n\n✅ Your event "${eventResult.event.title || eventResult.event.name}" has been created!`
+            : '\n\n❌ Sorry, I could not create the event.';
+        }
+      }
+
       const aiMessage = {
         id: Date.now() + 1,
         type: 'ai',
-        content: response.response,
+        content: aiContent,
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('AI response error:', error);
       setError(error.message);
-      
       const errorMessage = {
         id: Date.now() + 1,
         type: 'ai',
@@ -148,7 +225,6 @@ const AIAssistantPage = () => {
         timestamp: new Date(),
         isError: true
       };
-      
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
@@ -191,32 +267,18 @@ const AIAssistantPage = () => {
             <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
               <Psychology sx={{ fontSize: 40, mr: 2 }} />
               <Typography variant="h3" component="h1">
-                AI Assistant
+                EaseBot
               </Typography>
-              <Chip 
-                label="Powered by Gemini" 
-                size="small" 
-                sx={{ ml: 2, bgcolor: 'rgba(255,255,255,0.2)' }}
-              />
             </Box>
             <Typography variant="h6" sx={{ opacity: 0.9 }}>
               Get intelligent help with events, descriptions, and planning
             </Typography>
-            
-            {/* AI Status Indicator */}
-            <Box mt={2}>
-              <Chip
-                label={aiStatus?.status === 'active' ? 'AI Ready' : aiStatus?.status === 'checking' ? 'Connecting...' : 'AI Unavailable'}
-                color={aiStatus?.status === 'active' ? 'success' : aiStatus?.status === 'checking' ? 'warning' : 'error'}
-                size="small"
-                sx={{ bgcolor: 'rgba(255,255,255,0.1)' }}
-              />
-            </Box>
+          
           </motion.div>
         </Container>
       </Box>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+  <Container maxWidth={false} disableGutters sx={{ p: 0, m: 0, width: '100vw', height: '100vh' }}>
         {/* Error Alert */}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -224,55 +286,23 @@ const AIAssistantPage = () => {
           </Alert>
         )}
 
-        {/* Quick Actions */}
-        {messages.length === 1 && (
-          <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Quick Actions
-            </Typography>
-            <Grid container spacing={2}>
-              {quickActions
-                .filter(action => action.available !== false)
-                .map((action, index) => (
-                <Grid item xs={12} sm={6} key={index}>
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      p: 2,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        elevation: 3,
-                        transform: 'translateY(-2px)'
-                      }
-                    }}
-                    onClick={() => handleQuickAction(action.action)}
-                  >
-                    <Box display="flex" alignItems="center" mb={1}>
-                      {action.icon}
-                      <Typography variant="subtitle2" sx={{ ml: 1, fontWeight: 600 }}>
-                        {action.title}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {action.description}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-        )}
+        
 
         {/* Chat Container */}
         <Paper
           elevation={3}
           sx={{
-            height: '70vh',
+            height: 'calc(100vh - 120px)', // fill most of the viewport, adjust header height as needed
+            minHeight: '600px',
             display: 'flex',
             flexDirection: 'column',
-            borderRadius: 3,
-            overflow: 'hidden'
+            borderRadius: 0,
+            boxShadow: 'none',
+            overflow: 'hidden',
+            width: '100vw',
+            position: 'relative',
+            m: 0,
+            p: 0
           }}
         >
           {/* Messages Area */}
@@ -387,7 +417,7 @@ const AIAssistantPage = () => {
           </Box>
 
           {/* Suggested Questions */}
-          {messages.length <= 3 && (
+          {messages.length === 1 && (
             <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Try asking:
@@ -456,7 +486,7 @@ const AIAssistantPage = () => {
         {/* Features Info */}
         <Box mt={4}>
           <Typography variant="h6" gutterBottom textAlign="center">
-            AI-Powered Features:
+
           </Typography>
           <Box display="flex" justifyContent="center" flexWrap="wrap" gap={2}>
             <Chip icon={<Event />} label="Event Discovery" variant="outlined" />

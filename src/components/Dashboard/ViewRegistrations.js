@@ -28,84 +28,64 @@ import {
 import { motion } from 'framer-motion';
 import { CSVLink } from 'react-csv';
 
-// Mock registration data
-const mockRegistrations = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@email.com',
-    college: 'Stanford University',
-    phone: '+1 (555) 123-4567',
-    eventTitle: 'Tech Innovation Summit 2024',
-    eventId: 1,
-    registrationDate: '2024-02-15',
-    status: 'confirmed',
-    registrationId: 'REG-001'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@email.com',
-    college: 'MIT',
-    phone: '+1 (555) 234-5678',
-    eventTitle: 'Tech Innovation Summit 2024',
-    eventId: 1,
-    registrationDate: '2024-02-16',
-    status: 'confirmed',
-    registrationId: 'REG-002'
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike.johnson@email.com',
-    college: 'UC Berkeley',
-    phone: '+1 (555) 345-6789',
-    eventTitle: 'Digital Marketing Masterclass',
-    eventId: 2,
-    registrationDate: '2024-02-17',
-    status: 'pending',
-    registrationId: 'REG-003'
-  },
-  {
-    id: 4,
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@email.com',
-    college: 'Harvard University',
-    phone: '+1 (555) 456-7890',
-    eventTitle: 'Startup Pitch Competition',
-    eventId: 3,
-    registrationDate: '2024-02-18',
-    status: 'confirmed',
-    registrationId: 'REG-004'
-  },
-  {
-    id: 5,
-    name: 'David Brown',
-    email: 'david.brown@email.com',
-    college: 'Yale University',
-    phone: '+1 (555) 567-8901',
-    eventTitle: 'Tech Innovation Summit 2024',
-    eventId: 1,
-    registrationDate: '2024-02-19',
-    status: 'cancelled',
-    registrationId: 'REG-005'
-  }
-];
 
-const mockEvents = [
-  { id: 'all', title: 'All Events' },
-  { id: 1, title: 'Tech Innovation Summit 2024' },
-  { id: 2, title: 'Digital Marketing Masterclass' },
-  { id: 3, title: 'Startup Pitch Competition' }
-];
+import { useEffect } from 'react';
+import { eventsAPI, registrationsAPI } from '../../services/api';
 
 const ViewRegistrations = () => {
-  const [registrations, setRegistrations] = useState(mockRegistrations);
+  const [registrations, setRegistrations] = useState([]);
+  const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(() => {
+    // Fetch organizer's events
+    const fetchEvents = async () => {
+      try {
+        const res = await eventsAPI.getMyEvents();
+        setEvents([{ id: 'all', title: 'All Events' }, ...res.data.map(e => ({ id: e._id, title: e.title }))]);
+      } catch (err) {}
+    };
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    // Fetch registrations for selected event
+    const fetchRegistrations = async () => {
+      try {
+        let regs = [];
+        if (selectedEvent === 'all') {
+          // Fetch registrations for all events
+          if (events.length > 1) {
+            const allRegs = await Promise.all(
+              events.filter(e => e.id !== 'all').map(e => registrationsAPI.getEventRegistrations(e.id))
+            );
+            regs = allRegs.flatMap(r => r.data.registrations || []);
+          }
+        } else {
+          const res = await registrationsAPI.getEventRegistrations(selectedEvent);
+          regs = res.data.registrations || [];
+        }
+        // Map backend data to frontend format
+        setRegistrations(regs.map(reg => ({
+          id: reg._id,
+          name: reg.userDetails?.name || reg.userInfo?.name,
+          email: reg.userDetails?.email || reg.userInfo?.email,
+          college: reg.userInfo?.college,
+          phone: reg.userInfo?.phone,
+          eventTitle: reg.event?.title,
+          eventId: reg.event?._id,
+          registrationDate: reg.registrationDate,
+          status: reg.status,
+          registrationId: reg.registrationId
+        })));
+      } catch (err) {}
+    };
+    fetchRegistrations();
+  }, [selectedEvent, events]);
 
   // Filter registrations
   const filteredRegistrations = registrations.filter(registration => {
@@ -197,7 +177,7 @@ const ViewRegistrations = () => {
                 onChange={(e) => setSelectedEvent(e.target.value)}
                 sx={{ minWidth: 200 }}
               >
-                {mockEvents.map((event) => (
+                {events.map((event) => (
                   <MenuItem key={event.id} value={event.id}>
                     {event.title}
                   </MenuItem>
@@ -238,7 +218,7 @@ const ViewRegistrations = () => {
             {/* Summary */}
             <Alert severity="info" sx={{ mb: 3 }}>
               Showing {filteredRegistrations.length} registration(s)
-              {selectedEvent !== 'all' && ` for ${mockEvents.find(e => e.id === selectedEvent)?.title}`}
+              {selectedEvent !== 'all' && ` for ${events.find(e => e.id === selectedEvent)?.title}`}
             </Alert>
 
             {/* Table */}

@@ -1,91 +1,31 @@
 const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Event title is required'],
-    trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
-  },
-  description: {
-    type: String,
-    required: [true, 'Event description is required'],
-    maxlength: [2000, 'Description cannot be more than 2000 characters']
-  },
-  category: {
-    type: String,
-    required: [true, 'Category is required'],
-    enum: ['Technology', 'Business', 'Marketing', 'Design', 'Finance', 'Education', 'Health', 'Entertainment', 'Sports', 'Other']
-  },
-  eventType: {
-    type: String,
-    enum: ['Conference', 'Workshop', 'Seminar', 'Meetup', 'Webinar', 'Competition', 'Networking Event', 'Training Session', 'Panel Discussion', 'Hackathon'],
-    default: 'Conference'
-  },
-  organizer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+  title: { type: String, trim: true },
+  description: { type: String },
+  category: { type: String },
+  eventType: { type: String },
+  organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   organizerInfo: {
-    name: {
-      type: String,
-      required: true
-    },
-    email: {
-      type: String,
-      required: true
-    },
+    name: { type: String },
+    email: { type: String },
     phone: String
   },
-  date: {
-    type: Date,
-    required: [true, 'Event date is required']
-  },
-  startTime: {
-    type: String,
-    required: [true, 'Start time is required'],
-    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Please enter valid time format (HH:MM)']
-  },
-  endTime: {
-    type: String,
-    required: [true, 'End time is required'],
-    match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Please enter valid time format (HH:MM)']
-  },
+  date: { type: Date },
+  startTime: { type: String },
+  endTime: { type: String },
   location: {
-    venue: {
-      type: String,
-      required: [true, 'Venue is required'],
-      maxlength: [100, 'Venue name cannot be more than 100 characters']
-    },
-    address: {
-      type: String,
-      required: [true, 'Address is required'],
-      maxlength: [200, 'Address cannot be more than 200 characters']
-    },
+    venue: { type: String },
+    address: { type: String },
     coordinates: {
       latitude: Number,
       longitude: Number
     }
   },
-  maxRegistrations: {
-    type: Number,
-    required: [true, 'Maximum registrations is required'],
-    min: [1, 'Maximum registrations must be at least 1']
-  },
-  currentRegistrations: {
-    type: Number,
-    default: 0
-  },
-  registrationDeadline: {
-    type: Date,
-    required: [true, 'Registration deadline is required']
-  },
-  status: {
-    type: String,
-    enum: ['draft', 'published', 'ongoing', 'completed', 'cancelled'],
-    default: 'draft'
-  },
+  maxRegistrations: { type: Number },
+  currentRegistrations: { type: Number, default: 0 },
+  registrationDeadline: { type: Date },
+  status: { type: String, default: 'draft' },
   images: [{
     url: String,
     caption: String,
@@ -225,12 +165,9 @@ eventSchema.methods.incrementViews = function() {
 
 // Method to check if user can register
 eventSchema.methods.canRegister = function() {
-  const now = new Date();
-  return (
-    this.status === 'published' &&
-    now <= this.registrationDeadline &&
-    this.currentRegistrations < this.maxRegistrations
-  );
+  return (this.status === 'published' || this.status === 'draft') && 
+         this.currentRegistrations < this.maxRegistrations &&
+         new Date() < new Date(this.registrationDeadline);
 };
 
 // Static method to get events by category

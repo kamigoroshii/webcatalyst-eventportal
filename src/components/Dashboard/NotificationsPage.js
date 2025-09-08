@@ -29,60 +29,63 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
+
+import { useEffect } from 'react';
+import notificationsAPI from '../../services/notificationsAPI';
+import NotificationSnackbar from './NotificationSnackbar';
+
+const iconMap = {
+  registration: <Person />,
+  event: <Event />,
+  system: <Info />,
+  warning: <Warning />,
+  success: <CheckCircle />,
+};
+
+const colorMap = {
+  registration: 'primary',
+  event: 'warning',
+  system: 'info',
+  warning: 'error',
+  success: 'success',
+};
+
 const NotificationsPage = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'registration',
-      title: 'New Registration',
-      message: 'John Doe registered for Tech Innovation Summit 2024',
-      time: '2 hours ago',
-      read: false,
-      icon: <Person />,
-      color: 'primary'
-    },
-    {
-      id: 2,
-      type: 'event',
-      title: 'Event Update Required',
-      message: 'Your event "Digital Marketing Masterclass" needs venue confirmation',
-      time: '5 hours ago',
-      read: false,
-      icon: <Warning />,
-      color: 'warning'
-    },
-    {
-      id: 3,
-      type: 'system',
-      title: 'System Maintenance',
-      message: 'Scheduled maintenance on Sunday 2 AM - 4 AM',
-      time: '1 day ago',
-      read: true,
-      icon: <Info />,
-      color: 'info'
-    },
-    {
-      id: 4,
-      type: 'registration',
-      title: 'Registration Cancelled',
-      message: 'Sarah Wilson cancelled registration for Startup Pitch Competition',
-      time: '2 days ago',
-      read: true,
-      icon: <Person />,
-      color: 'error'
-    },
-    {
-      id: 5,
-      type: 'event',
-      title: 'Event Published',
-      message: 'Your event "AI Workshop" has been successfully published',
-      time: '3 days ago',
-      read: true,
-      icon: <CheckCircle />,
-      color: 'success'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await notificationsAPI.getOrganizerNotifications();
+        const notifs = res.data.map(n => ({
+          id: n._id,
+          type: n.type,
+          title: n.type === 'registration' ? 'New Registration' : 'Notification',
+          message: n.message,
+          time: new Date(n.createdAt).toLocaleString(),
+          read: n.read,
+          icon: iconMap[n.type] || <Info />,
+          color: colorMap[n.type] || 'info',
+        }));
+        setNotifications(notifs);
+        // Show popup for new unread notifications
+        const newNotif = notifs.find(n => !n.read);
+        if (newNotif) {
+          setSnackbarMsg(newNotif.message);
+          setSnackbarOpen(true);
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchNotifications();
+    // Optionally poll every 30s for new notifications
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -119,8 +122,19 @@ const NotificationsPage = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+    setSnackbarMsg('');
+  };
+
   return (
     <Box>
+      <NotificationSnackbar
+        open={snackbarOpen}
+        message={snackbarMsg}
+        onClose={handleSnackbarClose}
+        severity="info"
+      />
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1" color="primary">
           <Badge badgeContent={unreadCount} color="error">

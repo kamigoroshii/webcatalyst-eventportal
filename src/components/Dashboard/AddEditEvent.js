@@ -56,7 +56,23 @@ const AddEditEvent = () => {
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
+    defaultValues: {
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      endTime: '',
+      location: '',
+      address: '',
+      category: '',
+      maxRegistrations: '',
+      registrationDeadline: '',
+      organizer: '',
+      email: '',
+      phone: ''
+    }
+  });
 
   useEffect(() => {
     if (isEditing && id) {
@@ -64,35 +80,34 @@ const AddEditEvent = () => {
       const eventData = mockEventData[id];
       if (eventData) {
         Object.keys(eventData).forEach(key => {
-          setValue(key, eventData[key]);
+          setValue(key, eventData[key] || '');
         });
       }
     }
   }, [id, isEditing, setValue]);
 
+  const { eventsAPI } = require('../../services/api');
   const onSubmit = async (data) => {
     setLoading(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Event data:', data);
-      
+      let response;
+      if (isEditing && id) {
+        response = await eventsAPI.updateEvent(id, data);
+      } else {
+        response = await eventsAPI.createEvent(data);
+      }
       setSnackbar({
         open: true,
         message: isEditing ? 'Event updated successfully!' : 'Event created successfully!',
         severity: 'success'
       });
-      
       setTimeout(() => {
         navigate('/dashboard/events');
       }, 2000);
-      
     } catch (error) {
       setSnackbar({
         open: true,
-        message: 'An error occurred. Please try again.',
+        message: error?.message || 'An error occurred. Please try again.',
         severity: 'error'
       });
     } finally {
@@ -130,7 +145,11 @@ const AddEditEvent = () => {
                   <TextField
                     fullWidth
                     label="Event Title"
-                    {...register('title', { required: 'Event title is required' })}
+                    {...register('title', {
+                      required: 'Event title is required',
+                      minLength: { value: 2, message: 'Title must be at least 2 characters' },
+                      maxLength: { value: 100, message: 'Title must be at most 100 characters' }
+                    })}
                     error={!!errors.title}
                     helperText={errors.title?.message}
                   />
@@ -142,7 +161,11 @@ const AddEditEvent = () => {
                     multiline
                     rows={4}
                     label="Event Description"
-                    {...register('description', { required: 'Event description is required' })}
+                    {...register('description', {
+                      required: 'Event description is required',
+                      minLength: { value: 20, message: 'Description must be at least 20 characters' },
+                      maxLength: { value: 2000, message: 'Description must be at most 2000 characters' }
+                    })}
                     error={!!errors.description}
                     helperText={errors.description?.message}
                   />
@@ -204,7 +227,13 @@ const AddEditEvent = () => {
                     type="time"
                     label="Start Time"
                     InputLabelProps={{ shrink: true }}
-                    {...register('time', { required: 'Start time is required' })}
+                    {...register('time', {
+                      required: 'Start time is required',
+                      pattern: {
+                        value: /^([01]\d|2[0-3]):([0-5]\d)$/,
+                        message: 'Please provide valid start time (HH:MM)'
+                      }
+                    })}
                     error={!!errors.time}
                     helperText={errors.time?.message}
                   />
@@ -245,7 +274,11 @@ const AddEditEvent = () => {
                   <TextField
                     fullWidth
                     label="Venue Name"
-                    {...register('location', { required: 'Venue name is required' })}
+                    {...register('location', {
+                      required: 'Venue name is required',
+                      minLength: { value: 2, message: 'Venue must be at least 2 characters' },
+                      maxLength: { value: 100, message: 'Venue must be at most 100 characters' }
+                    })}
                     error={!!errors.location}
                     helperText={errors.location?.message}
                   />
@@ -255,7 +288,11 @@ const AddEditEvent = () => {
                   <TextField
                     fullWidth
                     label="Full Address"
-                    {...register('address', { required: 'Address is required' })}
+                    {...register('address', {
+                      required: 'Address is required',
+                      minLength: { value: 5, message: 'Address must be at least 5 characters' },
+                      maxLength: { value: 200, message: 'Address must be at most 200 characters' }
+                    })}
                     error={!!errors.address}
                     helperText={errors.address?.message}
                   />

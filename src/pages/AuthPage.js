@@ -412,7 +412,7 @@ const AuthPage = () => {
                         {...registerField('phone', {
                           required: activeTab === 1 && userRole === 'participant' ? 'Phone number is required' : false,
                           pattern: {
-                            value: /^\+?[\d\s\-\(\)]+$/,
+                            value: /^\+?[\d\s\-()]+$/,
                             message: 'Please enter a valid phone number'
                           }
                         })}

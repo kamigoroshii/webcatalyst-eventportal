@@ -31,6 +31,8 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { eventsAPI } from '../../services/api';
 
 // Mock events data
 const mockEvents = [
@@ -81,7 +83,19 @@ const mockEvents = [
 ];
 
 const EventsList = () => {
-  const [events, setEvents] = useState(mockEvents);
+  const [events, setEvents] = useState([]);
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await eventsAPI.getMyEvents();
+        // Ensure events is always an array from backend response
+        setEvents(Array.isArray(res.data?.events) ? res.data.events : []);
+      } catch (err) {
+        setEvents([]);
+      }
+    };
+    fetchEvents();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -100,7 +114,7 @@ const EventsList = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/dashboard/edit-event/${selectedEvent.id}`);
+  navigate(`/dashboard/edit-event/${selectedEvent._id}`);
     handleMenuClose();
   };
 
@@ -110,19 +124,19 @@ const EventsList = () => {
   };
 
   const confirmDelete = () => {
-    setEvents(events.filter(event => event.id !== selectedEvent.id));
+  setEvents(events.filter(event => event._id !== selectedEvent._id));
     setDeleteDialogOpen(false);
     setSelectedEvent(null);
   };
 
   const handleView = () => {
-    navigate(`/events/${selectedEvent.id}`);
+  navigate(`/events/${selectedEvent._id}`);
     handleMenuClose();
   };
 
   const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.category.toLowerCase().includes(searchTerm.toLowerCase())
+    event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    event.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status) => {
@@ -130,6 +144,7 @@ const EventsList = () => {
       case 'active': return 'success';
       case 'upcoming': return 'primary';
       case 'completed': return 'default';
+      case 'draft': return 'warning';
       default: return 'default';
     }
   };
@@ -176,7 +191,7 @@ const EventsList = () => {
       {/* Events Grid */}
       <Grid container spacing={3}>
         {filteredEvents.map((event, index) => (
-          <Grid item xs={12} md={6} lg={4} key={event.id}>
+          <Grid item xs={12} key={event._id}>
             <motion.div
               variants={cardVariants}
               initial="hidden"
@@ -185,33 +200,40 @@ const EventsList = () => {
             >
               <Card
                 sx={{
-                  height: '100%',
+                  width: '100%',
+                  minHeight: 160,
+                  background: (theme) => theme.palette.primary.main,
+                  color: (theme) => theme.palette.primary.contrastText,
+                  borderRadius: 3,
+                  boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(111, 113, 75, 0.15)'
+                    boxShadow: '0 12px 32px rgba(111, 113, 75, 0.25)'
                   }
                 }}
-                onClick={() => navigate(`/events/${event.id}`)}
+                onClick={() => navigate(`/events/${event._id}`)}
               >
                 <CardContent>
                   {/* Header with menu */}
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
                     <Box flexGrow={1}>
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        {event.title}
+                      <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 700, color: (theme) => theme.palette.primary.contrastText }}>
+                        {event.title || <span style={{ color: '#e0e0e0' }}>Untitled Event</span>}
                       </Typography>
                       <Chip
-                        label={event.status}
+                        label={event.status ? event.status.charAt(0).toUpperCase() + event.status.slice(1) : 'Draft'}
                         size="small"
-                        color={getStatusColor(event.status)}
-                        variant="outlined"
+                        color="secondary"
+                        variant="filled"
+                        sx={{ fontWeight: 500, textTransform: 'capitalize', color: (theme) => theme.palette.primary.main, background: (theme) => theme.palette.secondary.main }}
                       />
                     </Box>
                     <IconButton
                       onClick={(e) => handleMenuOpen(e, event)}
                       size="small"
+                      sx={{ color: (theme) => theme.palette.primary.contrastText }}
                     >
                       <MoreVert />
                     </IconButton>
@@ -220,39 +242,40 @@ const EventsList = () => {
                   {/* Event Details */}
                   <Box mb={2}>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(event.date).toLocaleDateString('en-US', {
+                      <CalendarToday sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
+                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
+                        {event.date ? new Date(event.date).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
-                        })}
+                        }) : <span style={{ color: '#e0e0e0' }}>No date</span>}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {event.location}
+                      <LocationOn sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
+                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
+                        {event.location?.venue || event.location || <span style={{ color: '#e0e0e0' }}>No venue</span>}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
-                      <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {event.registrations}/{event.maxRegistrations} registered
+                      <People sx={{ fontSize: 16, mr: 1, color: (theme) => theme.palette.primary.contrastText }} />
+                      <Typography variant="body2" sx={{ color: (theme) => theme.palette.primary.contrastText }}>
+                        {typeof event.currentRegistrations === 'number' ? event.currentRegistrations : 0}/{event.maxRegistrations || 0} registered
                       </Typography>
                     </Box>
                   </Box>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {event.description}
+                  <Typography variant="body2" sx={{ mb: 2, fontStyle: !event.description ? 'italic' : 'normal', color: (theme) => theme.palette.primary.contrastText }}>
+                    {event.description || 'No description provided.'}
                   </Typography>
 
                   {/* Category */}
                   <Chip
-                    label={event.category}
+                    label={event.category || 'Uncategorized'}
                     size="small"
-                    color="primary"
-                    variant="outlined"
+                    color="secondary"
+                    variant="filled"
+                    sx={{ fontWeight: 500, textTransform: 'capitalize', color: (theme) => theme.palette.primary.main, background: (theme) => theme.palette.secondary.main }}
                   />
                 </CardContent>
               </Card>
