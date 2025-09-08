@@ -58,22 +58,18 @@ const ViewRegistrations = () => {
       try {
         let regs = [];
         if (selectedEvent === 'all') {
-          // Fetch registrations for all events
-          if (events.length > 1) {
-            const allRegs = await Promise.all(
-              events.filter(e => e.id !== 'all').map(e => registrationsAPI.getEventRegistrations(e.id))
-            );
-            regs = allRegs.flatMap(r => r.data.registrations || []);
-          }
+          // Fetch all registrations using new API endpoint
+          const res = await registrationsAPI.getAllRegistrations();
+          regs = res.data || res.data?.data || [];
         } else {
           const res = await registrationsAPI.getEventRegistrations(selectedEvent);
-          regs = res.data.registrations || [];
+          regs = res.data?.registrations || [];
         }
         // Map backend data to frontend format
         setRegistrations(regs.map(reg => ({
           id: reg._id,
-          name: reg.userDetails?.name || reg.userInfo?.name,
-          email: reg.userDetails?.email || reg.userInfo?.email,
+          name: reg.user?.name || reg.userDetails?.name || reg.userInfo?.name,
+          email: reg.user?.email || reg.userDetails?.email || reg.userInfo?.email,
           college: reg.userInfo?.college,
           phone: reg.userInfo?.phone,
           eventTitle: reg.event?.title,

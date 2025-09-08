@@ -87,6 +87,7 @@ export const registrationsAPI = {
     api.put(`/registrations/${registrationId}/cancel`, { reason }),
   getEventRegistrations: (eventId, params = {}) => 
     api.get(`/registrations/event/${eventId}`, { params }),
+  getAllRegistrations: (params = {}) => api.get('/registrations/all', { params }),
   checkInUser: (registrationId, method) => 
     api.put(`/registrations/${registrationId}/check-in`, { method }),
   submitFeedback: (registrationId, feedbackData) => 

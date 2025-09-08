@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const { body, validationResult, query } = require('express-validator');
@@ -7,6 +8,20 @@ const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
+
+// @route   GET /api/registrations/all
+// @desc    Get all registrations (admin/organizer only)
+// @access  Private (organizer, admin)
+router.get('/all', [auth, authorize('organizer', 'admin')], async (req, res) => {
+  try {
+    const registrations = await Registration.find()
+      .populate('event')
+      .populate('user');
+    res.json({ success: true, data: registrations });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 // @route   POST /api/registrations
 // @desc    Register for an event

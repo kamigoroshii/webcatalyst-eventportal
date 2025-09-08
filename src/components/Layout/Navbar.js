@@ -65,35 +65,37 @@ const Navbar = () => {
         borderColor: 'divider'
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Logo */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Box 
-            display="flex" 
-            alignItems="center" 
-            sx={{ cursor: 'pointer' }}
-            onClick={() => navigate(user ? '/home' : '/')}
+      <Toolbar>
+        {/* Logo - hidden on organizer dashboard */}
+        {!location.pathname.startsWith('/dashboard') && (
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ marginRight: 24 }}
           >
-            <EventIcon sx={{ color: 'primary.main', mr: 1, fontSize: 28 }} />
-            <Typography 
-              variant="h5" 
-              component="div" 
-              sx={{ 
-                fontWeight: 700,
-                color: 'primary.main',
-                letterSpacing: '-0.5px'
-              }}
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              sx={{ cursor: 'pointer' }}
+              onClick={() => navigate(user ? '/home' : '/')}
             >
-              EventEase
-            </Typography>
-          </Box>
-        </motion.div>
+              <EventIcon sx={{ color: 'primary.main', mr: 1, fontSize: 28 }} />
+              <Typography 
+                variant="h5" 
+                component="div" 
+                sx={{ 
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  letterSpacing: '-0.5px'
+                }}
+              >
+                EventEase
+              </Typography>
+            </Box>
+          </motion.div>
+        )}
 
-        {/* Navigation Items */}
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box display="flex" alignItems="center" gap={2} sx={{ ml: 'auto' }}>
           {navItems.map((item) => (
             <motion.div
               key={item.key}

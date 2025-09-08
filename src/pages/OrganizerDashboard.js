@@ -214,6 +214,17 @@ const OrganizerDashboard = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        {sidebarCollapsed && (
+          <Typography
+            variant="h6"
+            color="primary"
+            fontWeight={700}
+            sx={{ letterSpacing: 1 }}
+            noWrap
+          >
+            EventEase
+          </Typography>
+        )}
         {!isMobile && (
           <IconButton onClick={handleSidebarToggle} size="small">
             {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
