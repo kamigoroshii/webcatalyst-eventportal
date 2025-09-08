@@ -1,0 +1,54 @@
+.organizerForm {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(111,113,75,0.10);
+  padding: 32px 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.participantForm {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(111,113,75,0.10);
+  padding: 32px 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.organizerForm .MuiTextField-root {
+  margin-bottom: 18px;
+}
+
+.participantForm .MuiTextField-root {
+  margin-bottom: 18px;
+}
+
+.organizerForm .MuiButton-root {
+  background: #6F714B;
+  color: #fff;
+}
+
+.participantForm .MuiButton-root {
+  background: #8a8c6b;
+  color: #6F714B;
+}
+
+.organizerForm .MuiButton-root:hover {
+  background: #4f5135;
+}
+
+.participantForm .MuiButton-root:hover {
+  background: #b1afa2;
+  color: #fff;
+}
+
+.organizerForm label,
+.organizerForm .MuiInputBase-input {
+  color: #6F714B;
+}
+
+.participantForm label,
+.participantForm .MuiInputBase-input {
+  color: #6F714B;
+}

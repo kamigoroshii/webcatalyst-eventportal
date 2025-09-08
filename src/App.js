@@ -37,8 +37,9 @@ const AppContent = () => {
       <Navbar />
       <ConnectionStatus />
       <Routes>
-        <Route path="/" element={<AuthPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
         <Route path="/ai-assistant" element={<AIAssistantPage />} />
         <Route 

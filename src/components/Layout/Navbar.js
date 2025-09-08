@@ -164,7 +164,7 @@ const Navbar = () => {
             >
               <Button
                 variant="contained"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/auth')}
                 sx={{ borderRadius: 2 }}
               >
                 Sign In

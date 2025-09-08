@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import styles from './AuthPage.module.css';
 
 const AuthPage = () => {
   const [step, setStep] = useState('role-selection'); // 'role-selection' or 'auth'
@@ -286,309 +287,217 @@ const AuthPage = () => {
   );
 
   // Authentication Form Component
-  const AuthFormScreen = () => (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.4 }}
-    >
-      {/* Header with Back Button */}
-      <Box display="flex" alignItems="center" mb={3}>
-        <Button
-          onClick={handleBackToRoleSelection}
-          sx={{ mr: 2, minWidth: 'auto', p: 1 }}
-        >
-          ←
-        </Button>
-        <Box flex={1} textAlign="center">
-          <Typography variant="h5" component="h1" gutterBottom>
-            {activeTab === 0 ? 'Sign In' :
-              userRole === 'participant' ? 'Participant Account' : 'Organizer Account'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {activeTab === 0 ? 'Sign in to your account' : 'Create your account'}
-          </Typography>
-        </Box>
-      </Box>
+  const AuthFormScreen = () => {
+    // Determine if organizer or participant
+    const isOrganizer = userRole === 'organizer';
+    const isParticipant = userRole === 'participant';
+    // Responsive grid columns
+    const gridCols = isOrganizer ? 2 : 1;
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        centered
-        sx={{
-          mb: 3,
-          '& .MuiTab-root': {
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '1rem',
-            minWidth: 120
-          },
-          '& .MuiTabs-indicator': {
-            backgroundColor: 'primary.main',
-            height: 3,
-            borderRadius: 1.5
-          }
-        }}
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{ duration: 0.4 }}
       >
-        <Tab label="Sign In" />
-        <Tab label="Sign Up" />
-      </Tabs>
-
-      {/* Error Alert */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+        {/* Header with Back Button */}
+        <Box display="flex" alignItems="center" mb={2}>
+          <Button
+            onClick={handleBackToRoleSelection}
+            sx={{ mr: 1, minWidth: 'auto', p: 0.5, fontSize: '1.2rem' }}
           >
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ←
+          </Button>
+          <Box flex={1} textAlign="center">
+            <Typography variant="h6" component="h1" gutterBottom sx={{ fontWeight: 600, fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
+              {activeTab === 0 ? 'Sign In' : isParticipant ? 'Participant Account' : 'Organizer Account'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+              {activeTab === 0 ? 'Sign in to your account' : 'Create your account'}
+            </Typography>
+          </Box>
+        </Box>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Box display="flex" flexDirection="column" gap={2.5}>
-          {/* Sign Up Only Fields */}
-          <AnimatePresence>
+        {/* Tabs */}
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          centered
+          sx={{ mb: 2, minHeight: 32, '& .MuiTab-root': { fontSize: '1rem', minWidth: 90, p: 0.5 }, '& .MuiTabs-indicator': { height: 2 } }}
+        >
+          <Tab label="Sign In" />
+          <Tab label="Sign Up" />
+        </Tabs>
+
+        {/* Error Alert */}
+        <AnimatePresence>
+          {error && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+              <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className={isOrganizer ? styles.organizerForm : isParticipant ? styles.participantForm : ''}
+          style={{ padding: 0, background: 'none', boxShadow: 'none', maxWidth: 'none' }}
+        >
+          <Box
+            display="grid"
+            gridTemplateColumns={{ xs: '1fr', sm: `repeat(${gridCols}, 1fr)` }}
+            gap={1.5}
+            alignItems="start"
+          >
+            {/* Common Fields */}
             {activeTab === 1 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Box display="flex" flexDirection="column" gap={2.5}>
-                  {/* Common Fields */}
-                  <motion.div variants={inputVariants} whileFocus="focus">
-                    <TextField
-                      fullWidth
-                      label="Full Name"
-                      variant="outlined"
-                      {...registerField('name', {
-                        required: activeTab === 1 ? 'Name is required' : false
-                      })}
-                      error={!!errors.name}
-                      helperText={errors.name?.message}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Person color="action" />
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-                  </motion.div>
-
-                  {/* Role-specific Fields */}
-                  {userRole === 'participant' ? (
-                    <Box display="flex" flexDirection="column" gap={2.5}>
-                      <TextField
-                        fullWidth
-                        label="College/University"
-                        variant="outlined"
-                        {...registerField('college', {
-                          required: activeTab === 1 && userRole === 'participant' ? 'College is required' : false
-                        })}
-                        error={!!errors.college}
-                        helperText={errors.college?.message}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <School color="action" />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Phone Number"
-                        variant="outlined"
-                        {...registerField('phone', {
-                          required: activeTab === 1 && userRole === 'participant' ? 'Phone number is required' : false,
-                          pattern: {
-                            value: /^\+?[\d\s\-()]+$/,
-                            message: 'Please enter a valid phone number'
-                          }
-                        })}
-                        error={!!errors.phone}
-                        helperText={errors.phone?.message}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone color="action" />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-                    </Box>
-                  ) : (
-                    <Box display="flex" flexDirection="column" gap={2.5}>
-                      <TextField
-                        fullWidth
-                        label="Organization/Company"
-                        variant="outlined"
-                        {...registerField('organization', {
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Organization is required' : false
-                        })}
-                        error={!!errors.organization}
-                        helperText={errors.organization?.message}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Business color="action" />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Position/Title"
-                        variant="outlined"
-                        {...registerField('position', {
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Position is required' : false
-                        })}
-                        error={!!errors.position}
-                        helperText={errors.position?.message}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Phone Number"
-                        variant="outlined"
-                        {...registerField('phone', {
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Phone number is required' : false,
-                          pattern: {
-                            value: /^\+?[\d\s\-\(\)]+$/,
-                            message: 'Please enter a valid phone number'
-                          }
-                        })}
-                        error={!!errors.phone}
-                        helperText={errors.phone?.message}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone color="action" />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Website (Optional)"
-                        variant="outlined"
-                        {...registerField('website', {
-                          pattern: {
-                            value: /^https?:\/\/.+/,
-                            message: 'Please enter a valid URL (starting with http:// or https://)'
-                          }
-                        })}
-                        error={!!errors.website}
-                        helperText={errors.website?.message}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Address"
-                        variant="outlined"
-                        multiline
-                        rows={2}
-                        {...registerField('address', {
-                          required: activeTab === 1 && userRole === 'organizer' ? 'Address is required' : false
-                        })}
-                        error={!!errors.address}
-                        helperText={errors.address?.message}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}>
-                              <LocationOn color="action" />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-                    </Box>
-                  )}
-                </Box>
-              </motion.div>
+              <>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  size="small"
+                  variant="outlined"
+                  {...registerField('name', { required: activeTab === 1 ? 'Name is required' : false })}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                  InputProps={{ startAdornment: (<InputAdornment position="start"><Person color="action" /></InputAdornment>) }}
+                />
+                {isOrganizer && (
+                  <TextField
+                    fullWidth
+                    label="Organization/Company"
+                    size="small"
+                    variant="outlined"
+                    {...registerField('organization', { required: 'Organization is required' })}
+                    error={!!errors.organization}
+                    helperText={errors.organization?.message}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><Business color="action" /></InputAdornment>) }}
+                  />
+                )}
+                {isOrganizer && (
+                  <TextField
+                    fullWidth
+                    label="Position/Title"
+                    size="small"
+                    variant="outlined"
+                    {...registerField('position', { required: 'Position is required' })}
+                    error={!!errors.position}
+                    helperText={errors.position?.message}
+                  />
+                )}
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  size="small"
+                  variant="outlined"
+                  {...registerField('phone', {
+                    required: activeTab === 1 ? 'Phone number is required' : false,
+                    pattern: { value: /^\+?[\d\s\-()]+$/, message: 'Please enter a valid phone number' }
+                  })}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message}
+                  InputProps={{ startAdornment: (<InputAdornment position="start"><Phone color="action" /></InputAdornment>) }}
+                />
+                {isOrganizer && (
+                  <TextField
+                    fullWidth
+                    label="Website (Optional)"
+                    size="small"
+                    variant="outlined"
+                    {...registerField('website', {
+                      pattern: { value: /^https?:\/\/.+/, message: 'Please enter a valid URL (starting with http:// or https://)' }
+                    })}
+                    error={!!errors.website}
+                    helperText={errors.website?.message}
+                  />
+                )}
+                {isOrganizer && (
+                  <TextField
+                    fullWidth
+                    label="Address"
+                    size="small"
+                    variant="outlined"
+                    multiline
+                    rows={2}
+                    {...registerField('address', { required: 'Address is required' })}
+                    error={!!errors.address}
+                    helperText={errors.address?.message}
+                    InputProps={{ startAdornment: (<InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}><LocationOn color="action" /></InputAdornment>) }}
+                  />
+                )}
+                {isParticipant && (
+                  <TextField
+                    fullWidth
+                    label="College/University"
+                    size="small"
+                    variant="outlined"
+                    {...registerField('college', { required: 'College is required' })}
+                    error={!!errors.college}
+                    helperText={errors.college?.message}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><School color="action" /></InputAdornment>) }}
+                  />
+                )}
+              </>
             )}
-          </AnimatePresence>
 
-          {/* Email Field */}
-          <motion.div variants={inputVariants} whileFocus="focus">
+            {/* Email Field */}
             <TextField
               fullWidth
               label="Email Address"
               type="email"
+              size="small"
               variant="outlined"
               {...registerField('email', {
                 required: 'Email is required',
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address'
-                }
+                pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
               })}
               error={!!errors.email}
               helperText={errors.email?.message}
             />
-          </motion.div>
 
-          {/* Password Field */}
-          <motion.div variants={inputVariants} whileFocus="focus">
+            {/* Password Field */}
             <TextField
               fullWidth
               label="Password"
               type={showPassword ? 'text' : 'password'}
+              size="small"
               variant="outlined"
               {...registerField('password', {
                 required: 'Password is required',
-                minLength: {
-                  value: 6,
-                  message: 'Password must be at least 6 characters'
-                }
+                minLength: { value: 6, message: 'Password must be at least 6 characters' }
               })}
               error={!!errors.password}
               helperText={errors.password?.message}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 )
               }}
             />
-          </motion.div>
+          </Box>
 
           {/* Remember Me / Forgot Password */}
           {activeTab === 0 && (
-            <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box display="flex" justifyContent="space-between" alignItems="center" mt={1} mb={1}>
               <FormControlLabel
-                control={<Checkbox color="primary" />}
-                label="Remember me"
-                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.9rem' } }}
+                control={<Checkbox color="primary" size="small" />}
+                label={<span style={{ fontSize: '0.95rem' }}>Remember me</span>}
+                sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.95rem' } }}
               />
-              <Link
-                href="#"
-                color="primary"
-                sx={{ fontSize: '0.9rem', textDecoration: 'none' }}
-              >
+              <Link href="#" color="primary" sx={{ fontSize: '0.95rem', textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </Box>
           )}
 
           {/* Submit Button */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <Box mt={1.5}>
             <Button
               type="submit"
               fullWidth
@@ -596,25 +505,21 @@ const AuthPage = () => {
               size="large"
               disabled={loading}
               sx={{
-                mt: 2,
-                py: 1.5,
+                py: 1.1,
                 borderRadius: 2,
                 fontSize: '1rem',
                 fontWeight: 600,
-                position: 'relative'
+                position: 'relative',
+                boxShadow: '0 2px 8px rgba(111,113,75,0.08)'
               }}
             >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                activeTab === 0 ? 'Sign In' : 'Create Account'
-              )}
+              {loading ? <CircularProgress size={22} color="inherit" /> : activeTab === 0 ? 'Sign In' : 'Create Account'}
             </Button>
-          </motion.div>
-        </Box>
-      </form>
-    </motion.div>
-  );
+          </Box>
+        </form>
+      </motion.div>
+    );
+  };
 
   return (
     <Box
@@ -637,7 +542,7 @@ const AuthPage = () => {
       >
         <Card
           sx={{
-            maxWidth: 800,
+            maxWidth: 800, // Reverted width
             width: '100%',
             backgroundColor: 'background.paper',
             boxShadow: (theme) => 
@@ -648,7 +553,7 @@ const AuthPage = () => {
             overflow: 'hidden'
           }}
         >
-          <CardContent sx={{ p: 5 }}>
+          <CardContent sx={{ p: { xs: 2, md: 6 } }}>
             <AnimatePresence mode="wait">
               {step === 'role-selection' ? (
                 <RoleSelectionScreen key="role-selection" />
